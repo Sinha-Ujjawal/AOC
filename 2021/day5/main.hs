@@ -2,8 +2,8 @@
 
 import Control.Monad (join)
 import Data.Char (isSpace)
+import qualified Data.Map.Strict as M
 import Data.Maybe (mapMaybe)
-import qualified Data.Set as S
 import qualified Data.Text as T
 import System.IO (hFlush, stdout)
 import Text.Read (readMaybe)
@@ -17,12 +17,8 @@ prompt text = do
 readMaybeText :: Read a => T.Text -> Maybe a
 readMaybeText = readMaybe . T.unpack
 
-combinations :: [a] -> [(a, a)]
-combinations [] = []
-combinations (x : xs) = [(x, x') | x' <- xs] ++ combinations xs
-
-distinct :: Ord a => [a] -> [a]
-distinct = S.toList . S.fromList
+counts :: (Ord a, Integral b) => [a] -> M.Map a b
+counts = foldl (\m a -> M.insertWith (+) a 1 m) M.empty
 
 type Point = (Int, Int)
 
@@ -31,7 +27,7 @@ data Line
   | V Int Int Int
   | LD Int Int Int
   | RD Int Int Int
-  deriving (Show, Eq)
+  deriving (Show, Eq, Ord)
 
 isDiagonal :: Line -> Bool
 isDiagonal (LD {}) = True
@@ -43,11 +39,6 @@ points (H y x1 x2) = [(x, y) | x <- [(min x1 x2) .. (max x1 x2)]]
 points (V x y1 y2) = [(x, y) | y <- [(min y1 y2) .. (max y1 y2)]]
 points (LD stride x y) = [(x - s, y - s) | s <- [0 .. stride]]
 points (RD stride x y) = [(x + s, y - s) | s <- [0 .. stride]]
-
-overlap :: Line -> Line -> [Point]
-overlap p q =
-  S.toList $
-    S.intersection (S.fromList (points p)) (S.fromList (points q))
 
 toLine :: String -> Maybe Line
 toLine =
@@ -81,27 +72,23 @@ toLines = mapMaybe toLine
 solvePart1 :: [String] -> Int
 solvePart1 =
   length
-    . distinct
+    . filter ((>= 2) . snd)
+    . M.toList
+    . counts
     . join
-    . map (overlap <$> fst <*> snd)
-    . combinations
+    . map points
     . filter (not . isDiagonal)
     . toLines
 
 solvePart2 :: [String] -> Int
 solvePart2 =
   length
-    . distinct
+    . filter ((>= 2) . snd)
+    . M.toList
+    . counts
     . join
-    . map (overlap <$> fst <*> snd)
-    . combinations
+    . map points
     . toLines
-
-part1 :: IO ()
-part1 = interact (show . solvePart1 . lines)
-
-part2 :: IO ()
-part2 = interact (show . solvePart2 . lines)
 
 main :: IO ()
 main = do
