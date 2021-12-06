@@ -41,10 +41,10 @@ solvePart2 = solver 256
 main :: IO ()
 main = do
   filename <- prompt "Enter file name: "
-  fileLines <- map (read . T.unpack) . T.splitOn "," . T.pack <$> readFile filename
+  nums <- map (read . T.unpack) . T.splitOn "," . T.pack <$> readFile filename
 
-  let part1Ans = solvePart1 fileLines
-      part2Ans = solvePart2 fileLines
+  let part1Ans = solvePart1 nums
+      part2Ans = solvePart2 nums
 
   putStrLn $ "Part1: " ++ show part1Ans
   putStrLn $ "Part2: " ++ show part2Ans
