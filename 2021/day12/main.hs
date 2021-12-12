@@ -74,17 +74,16 @@ distinctPathsThatVisitsASmallCaveAtMostTwice graph = dfs Start S.empty Nothing 0
                 acc' = node : acc
              in foldl (\paths' neighbor -> dfs neighbor visited' nodeConsideredToBeVisitedAtMostTwice 2 acc' paths') paths $ neighbors node graph
           else paths
-      | not (S.member node visited) && isSmallCave node && visitCount == 0 =
+      | isSmallCave node && visitCount == 0 =
         let visited' = S.insert node visited
             acc' = node : acc
             paths' = foldl (\paths' neighbor -> dfs neighbor visited' (Just node) 1 acc' paths') paths $ neighbors node graph
             paths'' = foldl (\paths' neighbor -> dfs neighbor visited' Nothing 0 acc' paths') paths' $ neighbors node graph
          in paths''
-      | not (S.member node visited) =
+      | otherwise =
         let visited' = if isNotBigCave node then S.insert node visited else visited
             acc' = node : acc
          in foldl (\paths' neighbor -> dfs neighbor visited' nodeConsideredToBeVisitedAtMostTwice visitCount acc' paths') paths $ neighbors node graph
-      | otherwise = paths
 
 solvePart1 :: String -> Maybe Int
 solvePart1 graphSpec = do
