@@ -65,26 +65,52 @@ hexadecimalToBinary = fmap join . traverse go
     -- otherwise,
     go _ = Nothing
 
-newtype LiteralValue = LiteralValue {value :: Int} deriving (Show, Eq)
+newtype LiteralValue = LiteralValue Integer deriving (Show, Eq)
 
-newtype Operator = Operator {subpackets :: (Packet, [Packet])} deriving (Show, Eq)
+data NaryOperatorType = Sum | Product | Min | Max deriving (Show, Eq)
+
+data BinaryOperatorType = GreaterThan | LessThan | EqualTo deriving (Show, Eq)
+
+data Operator
+  = NaryOperator NaryOperatorType
+  | BinaryOperator BinaryOperatorType (Packet, Packet)
+  deriving (Show, Eq)
 
 data Packet
   = LiteralValuePacket Int Int LiteralValue
-  | OperatorPacket Int Int Operator
+  | OperatorPacket Int Int (Maybe Operator) (Packet, [Packet])
   deriving (Show, Eq)
+
+evaluateWithOperator :: Operator -> [Packet] -> Maybe Integer
+evaluateWithOperator (NaryOperator Sum) ps@(_ : _) = sum <$> traverse evalulatePacket ps
+evaluateWithOperator (NaryOperator Product) ps@(_ : _) = product <$> traverse evalulatePacket ps
+evaluateWithOperator (NaryOperator Min) ps@(_ : _) = minimum <$> traverse evalulatePacket ps
+evaluateWithOperator (NaryOperator Max) ps@(_ : _) = maximum <$> traverse evalulatePacket ps
+evaluateWithOperator (BinaryOperator GreaterThan (p1, p2)) _ = let (ep1, ep2) = (evalulatePacket p1, evalulatePacket p2) in Just $ if ep1 > ep2 then 1 else 0
+evaluateWithOperator (BinaryOperator LessThan (p1, p2)) _ = let (ep1, ep2) = (evalulatePacket p1, evalulatePacket p2) in Just $ if ep1 < ep2 then 1 else 0
+evaluateWithOperator (BinaryOperator EqualTo (p1, p2)) _ = let (ep1, ep2) = (evalulatePacket p1, evalulatePacket p2) in Just $ if ep1 == ep2 then 1 else 0
+evaluateWithOperator _ _ = Nothing
+
+evalulatePacket :: Packet -> Maybe Integer
+evalulatePacket (LiteralValuePacket _ _ (LiteralValue v)) = Just v
+evalulatePacket packet@(OperatorPacket _ _ (Just operator) (sp, sps)) = evaluateWithOperator operator (sp : sps)
+evalulatePacket _ = Nothing
+
+subpackets :: Packet -> [Packet]
+subpackets (LiteralValuePacket {}) = []
+subpackets (OperatorPacket _ _ _ (sp, sps)) = sp : sps
 
 version :: Packet -> Int
 version (LiteralValuePacket v _ _) = v
-version (OperatorPacket v _ _) = v
+version (OperatorPacket v _ _ _) = v
 
 versions :: Packet -> [Int]
 versions (LiteralValuePacket v _ _) = [v]
-versions (OperatorPacket v _ (Operator (sp, sps))) = v : (versions sp ++ join (map versions sps))
+versions packet@(OperatorPacket v _ _ _) = v : join (map versions (subpackets packet))
 
 lengthOfPacket :: Packet -> Int
 lengthOfPacket (LiteralValuePacket _ l _) = l
-lengthOfPacket (OperatorPacket _ l _) = l
+lengthOfPacket (OperatorPacket _ l _ _) = l
 
 fromBinaryToPacket :: Binary -> Maybe (Packet, Binary)
 fromBinaryToPacket xs = do
@@ -95,7 +121,7 @@ fromBinaryToPacket xs = do
   if pt == 4
     then do
       (l, val, xs) <- pure $ go (versionBits + packetTypeBits) 0 xs
-      pure (LiteralValuePacket v l (LiteralValue val), xs)
+      pure (LiteralValuePacket v l (LiteralValue (toInteger val)), xs)
     else do
       ([typeId], xs) <- splitAtStrict 1 xs
       case typeId of
@@ -103,12 +129,14 @@ fromBinaryToPacket xs = do
           let lsubpacketsBits = 15
           (lsubpackets, xs) <- first binary2Int <$> splitAtStrict lsubpacketsBits xs
           (sp : sps, l, xs) <- pure $ go' 0 lsubpackets xs
-          pure (OperatorPacket v (l + lsubpacketsBits + 1 + versionBits + packetTypeBits) (Operator (sp, sps)), xs)
+          let operator = mkOperator pt (sp, sps)
+          pure (OperatorPacket v (l + lsubpacketsBits + 1 + versionBits + packetTypeBits) operator (sp, sps), xs)
         O -> do
           let nsubpacketsBits = 11
           (nsubpackets, xs) <- first binary2Int <$> splitAtStrict nsubpacketsBits xs
           (sp : sps, l, xs) <- pure $ go'' 0 nsubpackets xs
-          pure (OperatorPacket v (l + nsubpacketsBits + 1 + versionBits + packetTypeBits) (Operator (sp, sps)), xs)
+          let operator = mkOperator pt (sp, sps)
+          pure (OperatorPacket v (l + nsubpacketsBits + 1 + versionBits + packetTypeBits) operator (sp, sps), xs)
   where
     go l acc (Z : a : b : c : d : rest) = (l + 5, (acc * 16) + binary2Int [a, b, c, d], rest)
     go l acc (O : a : b : c : d : rest) = go (l + 5) ((acc * 16) + binary2Int [a, b, c, d]) rest
@@ -117,7 +145,10 @@ fromBinaryToPacket xs = do
     go' l lub xs =
       case fromBinaryToPacket xs of
         Nothing -> ([], l, xs)
-        Just (packet, rest) -> let (packets, l', rest') = go' (l + lengthOfPacket packet) lub rest in (packet : packets, l', rest')
+        Just (packet, rest) ->
+          if l + lengthOfPacket packet <= lub
+            then let (packets, l', rest') = go' (l + lengthOfPacket packet) lub rest in (packet : packets, l', rest')
+            else ([], l, xs)
 
     go'' l n xs
       | n <= 0 = ([], l, xs)
@@ -125,6 +156,17 @@ fromBinaryToPacket xs = do
         case fromBinaryToPacket xs of
           Nothing -> ([], l, xs)
           Just (packet, rest) -> let (packets, l', rest') = go'' (l + lengthOfPacket packet) (n - 1) rest in (packet : packets, l', rest')
+
+    -- 0-3 NaryOperators
+    mkOperator 0 _ = Just $ NaryOperator Sum
+    mkOperator 1 _ = Just $ NaryOperator Product
+    mkOperator 2 _ = Just $ NaryOperator Min
+    mkOperator 3 _ = Just $ NaryOperator Max
+    -- 5-7 BinaryOperators
+    mkOperator 5 (sp1, sp2 : _) = Just $ BinaryOperator GreaterThan (sp1, sp2)
+    mkOperator 6 (sp1, sp2 : _) = Just $ BinaryOperator LessThan (sp1, sp2)
+    mkOperator 7 (sp1, sp2 : _) = Just $ BinaryOperator EqualTo (sp1, sp2)
+    mkOperator _ _ = Nothing
 
 fromHexadecimalToPacket :: String -> Maybe (Packet, Binary)
 fromHexadecimalToPacket hxs = do
@@ -136,6 +178,11 @@ solvePart1 input = do
   (packet, _) <- fromHexadecimalToPacket input
   pure $ sum $ versions packet
 
+solvePart2 :: String -> Maybe Integer
+solvePart2 input = do
+  (packet, _) <- fromHexadecimalToPacket input
+  evalulatePacket packet
+
 main :: IO ()
 main = do
   filename <- prompt "Enter file name: "
@@ -143,3 +190,8 @@ main = do
 
   putStrLn "Part 1:"
   forM_ content (\input -> putStrLn $ input ++ ": " ++ show (solvePart1 input))
+
+  putStrLn ""
+
+  putStrLn "Part 2:"
+  forM_ content (\input -> putStrLn $ input ++ ": " ++ show (solvePart2 input))
