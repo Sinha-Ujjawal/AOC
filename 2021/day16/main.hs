@@ -73,12 +73,12 @@ data BinaryOperatorType = GreaterThan | LessThan | EqualTo deriving (Show, Eq)
 
 data Operator
   = NaryOperator NaryOperatorType
-  | BinaryOperator BinaryOperatorType (Packet, Packet)
+  | BinaryOperator BinaryOperatorType
   deriving (Show, Eq)
 
 data Packet
   = LiteralValuePacket Int Int LiteralValue
-  | OperatorPacket Int Int (Maybe Operator) (Packet, [Packet])
+  | OperatorPacket Int Int Operator (Packet, [Packet])
   deriving (Show, Eq)
 
 evaluateWithOperator :: Operator -> [Packet] -> Maybe Integer
@@ -86,15 +86,14 @@ evaluateWithOperator (NaryOperator Sum) ps@(_ : _) = sum <$> traverse evalulateP
 evaluateWithOperator (NaryOperator Product) ps@(_ : _) = product <$> traverse evalulatePacket ps
 evaluateWithOperator (NaryOperator Min) ps@(_ : _) = minimum <$> traverse evalulatePacket ps
 evaluateWithOperator (NaryOperator Max) ps@(_ : _) = maximum <$> traverse evalulatePacket ps
-evaluateWithOperator (BinaryOperator GreaterThan (p1, p2)) _ = let (ep1, ep2) = (evalulatePacket p1, evalulatePacket p2) in Just $ if ep1 > ep2 then 1 else 0
-evaluateWithOperator (BinaryOperator LessThan (p1, p2)) _ = let (ep1, ep2) = (evalulatePacket p1, evalulatePacket p2) in Just $ if ep1 < ep2 then 1 else 0
-evaluateWithOperator (BinaryOperator EqualTo (p1, p2)) _ = let (ep1, ep2) = (evalulatePacket p1, evalulatePacket p2) in Just $ if ep1 == ep2 then 1 else 0
+evaluateWithOperator (BinaryOperator GreaterThan) [p1, p2] = let (ep1, ep2) = (evalulatePacket p1, evalulatePacket p2) in Just $ if ep1 > ep2 then 1 else 0
+evaluateWithOperator (BinaryOperator LessThan) [p1, p2] = let (ep1, ep2) = (evalulatePacket p1, evalulatePacket p2) in Just $ if ep1 < ep2 then 1 else 0
+evaluateWithOperator (BinaryOperator EqualTo) [p1, p2] = let (ep1, ep2) = (evalulatePacket p1, evalulatePacket p2) in Just $ if ep1 == ep2 then 1 else 0
 evaluateWithOperator _ _ = Nothing
 
 evalulatePacket :: Packet -> Maybe Integer
 evalulatePacket (LiteralValuePacket _ _ (LiteralValue v)) = Just v
-evalulatePacket packet@(OperatorPacket _ _ (Just operator) (sp, sps)) = evaluateWithOperator operator (sp : sps)
-evalulatePacket _ = Nothing
+evalulatePacket packet@(OperatorPacket _ _ operator (sp, sps)) = evaluateWithOperator operator (sp : sps)
 
 subpackets :: Packet -> [Packet]
 subpackets (LiteralValuePacket {}) = []
@@ -129,13 +128,13 @@ fromBinaryToPacket xs = do
           let lsubpacketsBits = 15
           (lsubpackets, xs) <- first binary2Int <$> splitAtStrict lsubpacketsBits xs
           (sp : sps, l, xs) <- pure $ go' 0 lsubpackets xs
-          let operator = mkOperator pt (sp, sps)
+          operator <- mkOperator pt
           pure (OperatorPacket v (l + lsubpacketsBits + 1 + versionBits + packetTypeBits) operator (sp, sps), xs)
         O -> do
           let nsubpacketsBits = 11
           (nsubpackets, xs) <- first binary2Int <$> splitAtStrict nsubpacketsBits xs
           (sp : sps, l, xs) <- pure $ go'' 0 nsubpackets xs
-          let operator = mkOperator pt (sp, sps)
+          operator <- mkOperator pt
           pure (OperatorPacket v (l + nsubpacketsBits + 1 + versionBits + packetTypeBits) operator (sp, sps), xs)
   where
     go l acc (Z : a : b : c : d : rest) = (l + 5, (acc * 16) + binary2Int [a, b, c, d], rest)
@@ -158,15 +157,15 @@ fromBinaryToPacket xs = do
           Just (packet, rest) -> let (packets, l', rest') = go'' (l + lengthOfPacket packet) (n - 1) rest in (packet : packets, l', rest')
 
     -- 0-3 NaryOperators
-    mkOperator 0 _ = Just $ NaryOperator Sum
-    mkOperator 1 _ = Just $ NaryOperator Product
-    mkOperator 2 _ = Just $ NaryOperator Min
-    mkOperator 3 _ = Just $ NaryOperator Max
+    mkOperator 0 = Just $ NaryOperator Sum
+    mkOperator 1 = Just $ NaryOperator Product
+    mkOperator 2 = Just $ NaryOperator Min
+    mkOperator 3 = Just $ NaryOperator Max
     -- 5-7 BinaryOperators
-    mkOperator 5 (sp1, sp2 : _) = Just $ BinaryOperator GreaterThan (sp1, sp2)
-    mkOperator 6 (sp1, sp2 : _) = Just $ BinaryOperator LessThan (sp1, sp2)
-    mkOperator 7 (sp1, sp2 : _) = Just $ BinaryOperator EqualTo (sp1, sp2)
-    mkOperator _ _ = Nothing
+    mkOperator 5 = Just $ BinaryOperator GreaterThan
+    mkOperator 6 = Just $ BinaryOperator LessThan
+    mkOperator 7 = Just $ BinaryOperator EqualTo
+    mkOperator _ = Nothing
 
 fromHexadecimalToPacket :: String -> Maybe (Packet, Binary)
 fromHexadecimalToPacket hxs = do
