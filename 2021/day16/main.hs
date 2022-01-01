@@ -127,13 +127,13 @@ fromBinaryToPacket xs = do
         Z -> do
           let lsubpacketsBits = 15
           (lsubpackets, xs) <- first binary2Int <$> splitAtStrict lsubpacketsBits xs
-          (sp : sps, l, xs) <- pure $ go' 0 lsubpackets xs
+          (sp : sps, l, xs) <- go' 0 lsubpackets xs
           operator <- mkOperator pt
           pure (OperatorPacket v (l + lsubpacketsBits + 1 + versionBits + packetTypeBits) operator (sp, sps), xs)
         O -> do
           let nsubpacketsBits = 11
           (nsubpackets, xs) <- first binary2Int <$> splitAtStrict nsubpacketsBits xs
-          (sp : sps, l, xs) <- pure $ go'' 0 nsubpackets xs
+          (sp : sps, l, xs) <- go'' 0 nsubpackets xs
           operator <- mkOperator pt
           pure (OperatorPacket v (l + nsubpacketsBits + 1 + versionBits + packetTypeBits) operator (sp, sps), xs)
   where
@@ -141,20 +141,27 @@ fromBinaryToPacket xs = do
     go l acc (O : a : b : c : d : rest) = go (l + 5) ((acc * 16) + binary2Int [a, b, c, d]) rest
     go l acc rest = (l, acc, rest)
 
-    go' l lub xs =
-      case fromBinaryToPacket xs of
-        Nothing -> ([], l, xs)
-        Just (packet, rest) ->
-          if l + lengthOfPacket packet <= lub
-            then let (packets, l', rest') = go' (l + lengthOfPacket packet) lub rest in (packet : packets, l', rest')
-            else ([], l, xs)
-
-    go'' l n xs
-      | n <= 0 = ([], l, xs)
+    go' l lub xs
+      | l == lub = Just ([], l, xs)
       | otherwise =
         case fromBinaryToPacket xs of
-          Nothing -> ([], l, xs)
-          Just (packet, rest) -> let (packets, l', rest') = go'' (l + lengthOfPacket packet) (n - 1) rest in (packet : packets, l', rest')
+          Nothing -> Nothing
+          Just (packet, rest) ->
+            if l + lengthOfPacket packet <= lub
+              then do
+                (packets, l', rest') <- go' (l + lengthOfPacket packet) lub rest
+                pure (packet : packets, l', rest')
+              else Just ([], l, xs)
+
+    go'' l n xs
+      | n < 0 = Nothing
+      | n == 0 = Just ([], l, xs)
+      | otherwise =
+        case fromBinaryToPacket xs of
+          Nothing -> Nothing
+          Just (packet, rest) -> do
+            (packets, l', rest') <- go'' (l + lengthOfPacket packet) (n - 1) rest
+            pure (packet : packets, l', rest')
 
     -- 0-3 NaryOperators
     mkOperator 0 = Just $ NaryOperator Sum
