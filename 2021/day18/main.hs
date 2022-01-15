@@ -69,8 +69,9 @@ explodeSnailfish = (\(s, b, _, _) -> (s, b)) . go 0
     go _ lf@(Leaf _) = (lf, False, Nothing, Nothing)
     go 4 (Pair (Leaf x) (Leaf y)) = (Leaf 0, True, Just x, Just y)
     go d pr@(Pair l r) =
-      let leftPart = go (d + 1) l
-          rightPart = go (d + 1) r
+      let d' = min (d + 1) 4
+          leftPart = go d' l
+          rightPart = go d' r
        in case leftPart of
             (l', True, x, Just y) -> (Pair l' (addToLeftmostChild y r), True, x, Nothing)
             (l', True, x, Nothing) -> (Pair l' r, True, x, Nothing)
