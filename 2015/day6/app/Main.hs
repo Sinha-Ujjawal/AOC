@@ -1,9 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ViewPatterns #-}
 
-import qualified Data.Map.Strict as M
+module Main where
+
 import Data.Maybe (fromMaybe)
 import qualified Data.Text as T
+import Data.Vector ((!), (//))
+import qualified Data.Vector as V
 import System.IO (hFlush, stdout)
 import qualified Text.Read as T
 
@@ -19,10 +22,13 @@ type Box = (Coordinate, Coordinate)
 
 type Brightness = Int
 
-type LightGrid = M.Map Coordinate Brightness
+type LightGrid = V.Vector Brightness
 
 initLights :: LightGrid
-initLights = M.empty
+initLights = V.generate (1000 * 1000) (const 0)
+
+coordToIdx :: Coordinate -> Int
+coordToIdx (row, col) = row * 1000 + col
 
 boxCoordinates :: Box -> [Coordinate]
 boxCoordinates ((xl, yl), (xu, yu)) =
@@ -30,16 +36,13 @@ boxCoordinates ((xl, yl), (xu, yu)) =
 
 type BrightnessUpdateFn = (Coordinate -> Brightness -> Brightness)
 
-updateBrightnessBy :: BrightnessUpdateFn -> LightGrid -> Coordinate -> LightGrid
-updateBrightnessBy updateFn grid coord = M.alter go coord grid
-  where
-    go Nothing = go (Just 0)
-    go (Just b) =
-      let b' = updateFn coord b
-       in if b' <= 0 then Nothing else Just b'
-
 updateGrid :: BrightnessUpdateFn -> Box -> LightGrid -> LightGrid
-updateGrid updateFn box grid = foldr (flip $ updateBrightnessBy updateFn) grid $ boxCoordinates box
+updateGrid updateFn box grid =
+  grid
+    `V.unsafeUpd` [ (idx, max (updateFn coord (grid ! idx)) 0)
+                    | coord <- boxCoordinates box,
+                      idx <- [coordToIdx coord]
+                  ]
 
 data Instruction = TurnOn !Box | TurnOff !Box | Toggle !Box deriving (Show, Eq)
 
@@ -67,7 +70,7 @@ parseLines :: [T.Text] -> Maybe [Instruction]
 parseLines = traverse parseLine
 
 solvePart1 :: [Instruction] -> Int
-solvePart1 = M.size . foldr applyInstruction initLights . reverse
+solvePart1 = V.length . V.filter (> 0) . foldr applyInstruction initLights . reverse
   where
     applyInstruction :: Instruction -> LightGrid -> LightGrid
     applyInstruction (TurnOn box) = turnOn box
@@ -79,11 +82,11 @@ solvePart1 = M.size . foldr applyInstruction initLights . reverse
     toggle box grid = updateGrid go box grid
       where
         go coord _
-          | M.member coord grid = 0
+          | grid ! coordToIdx coord == 1 = 0
           | otherwise = 1
 
 solvePart2 :: [Instruction] -> Int
-solvePart2 = sum . M.elems . foldr applyInstruction initLights . reverse
+solvePart2 = V.sum . foldr applyInstruction initLights . reverse
   where
     applyInstruction :: Instruction -> LightGrid -> LightGrid
     applyInstruction (TurnOn box) = turnOn box
