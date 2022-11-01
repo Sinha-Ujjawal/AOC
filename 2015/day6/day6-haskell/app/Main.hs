@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ViewPatterns #-}
@@ -29,18 +30,23 @@ type LightGrid = AIO.IOUArray Int Int
 initLights :: IO LightGrid
 initLights = AIO.newArray (0, 1000 * 1000) 0
 
-boxCoordinates :: Box -> [Coordinate]
-boxCoordinates ((xl, yl), (xu, yu)) =
-  [(x, y) | x <- [xl .. xu], y <- [yl .. yu]]
+forLoop :: (Monad m) => a -> (a -> Bool) -> (a -> a) -> (a -> m ()) -> m ()
+forLoop start cond inc f = go start
+  where
+    go !x
+      | cond x = f x >> go (inc x)
+      | otherwise = return ()
+{-# INLINE forLoop #-}
 
 type BrightnessUpdateFn = (Brightness -> Brightness)
 
 updateGrid :: BrightnessUpdateFn -> Box -> LightGrid -> IO LightGrid
-updateGrid updateFn box grid = do
-  forM_ (boxCoordinates box) $ \(row, col) -> do
-    let idx = row * 1000 + col
-    oldValue <- AIO.readArray grid idx
-    AIO.writeArray grid idx (max 0 (updateFn oldValue))
+updateGrid updateFn ((xl, yl), (xu, yu)) grid = do
+  forLoop xl (<= xu) (+ 1) $ \row -> do
+    forLoop yl (<= yu) (+ 1) $ \col -> do
+      let idx = row * 1000 + col
+      oldValue <- AIO.readArray grid idx
+      AIO.writeArray grid idx (max 0 (updateFn oldValue))
   return grid
 
 data Instruction = TurnOn !Box | TurnOff !Box | Toggle !Box deriving (Show, Eq)
