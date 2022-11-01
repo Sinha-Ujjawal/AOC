@@ -8,7 +8,6 @@ import Control.Monad (forM_)
 import qualified Data.Array.Base as AIO
 import qualified Data.Array.IO as AIO
 import Data.Bits (xor)
-import Data.Maybe (fromMaybe)
 import qualified Data.Text as T
 import System.IO (hFlush, stdout)
 import qualified Text.Read as T
@@ -25,7 +24,7 @@ type Box = (Coordinate, Coordinate)
 
 type Brightness = Int
 
-type LightGrid = AIO.IOArray Int Int
+type LightGrid = AIO.IOUArray Int Int
 
 initLights :: IO LightGrid
 initLights = AIO.newArray (0, 1000 * 1000) 0
@@ -104,7 +103,9 @@ main = do
   filename <- prompt "Enter file name: "
   fileLines <- T.lines . T.pack <$> readFile filename
 
-  let instructions = fromMaybe [] $ parseLines fileLines
+  let instructions = case parseLines fileLines of
+        Just instructions -> instructions
+        Nothing -> error "Unable to parse the file into instructions!"
   part1Ans <- solvePart1 instructions
   part2Ans <- solvePart2 instructions
 
