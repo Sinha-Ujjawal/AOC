@@ -49,6 +49,23 @@ Cargo.lock
 
 # End of https://www.toptal.com/developers/gitignore/api/rust
 
+/2015/day6/day6-clojure/.calva
+.clj-kondo
+.lsp
+/2015/day6/day6-clojure/target
+/2015/day6/day6-clojure/classes
+/2015/day6/day6-clojure/checkouts
+/2015/day6/day6-clojureprofiles.clj
+/2015/day6/day6-clojurepom.xml
+/2015/day6/day6-clojurepom.xml.asc
+*.jar
+*.class
+/2015/day6/day6-clojure/.lein-*
+/2015/day6/day6-clojure/.nrepl-port
+/2015/day6/day6-clojure/.hgignore
+/2015/day6/day6-clojure/.hg/
+
+
 # Custom
 .vscode
 *.exe
