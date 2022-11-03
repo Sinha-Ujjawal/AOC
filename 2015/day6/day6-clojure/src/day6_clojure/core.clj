@@ -2,18 +2,19 @@
   (:gen-class)
   (:require [clojure.string :as string]))
 
-(def init-light-grid
-  (vec (repeat (* 1000 1000) 0)))
+(defn init-light-grid []
+  (transient (vec (repeat (* 1000 1000) 0))))
 
-(defn box-coords [[rowl coll rowu colu]]
-  (for [row (range rowl (inc rowu))
-        col (range coll (inc colu))
-        :let [idx (+ (* row 1000) col)]]
-    idx))
 
-(defn update-grid [update-fn box grid]
-  (let [reducer (fn [grid idx] (assoc! grid idx (max 0 (update-fn (grid idx)))))]
-    (reduce reducer grid (box-coords box))))
+(defn update-grid [update-fn [rowl coll rowu colu] grid]
+  (loop [row rowl col coll grid grid]
+    (let [idx (+ (* row 1000) col)]
+      (if (and (<= row rowu) (<= col colu))
+        (recur
+         (+ row (if (= col colu) 1 0))
+         (if (= col colu) coll (inc col))
+         (assoc! grid idx (max 0 (update-fn (grid idx)))))
+        grid))))
 
 (defn apply-instruction [turn-on-update-fn
                          turn-off-update-fn
@@ -30,7 +31,9 @@
              toggle-update-fn
              instructions]
   (let [reducer (partial apply-instruction turn-on-update-fn turn-off-update-fn toggle-update-fn)]
-    (persistent! (reduce reducer (transient init-light-grid) instructions))))
+    (loop [instructions instructions grid (init-light-grid)]
+      (if (empty? instructions) (persistent! grid)
+          (recur (rest instructions) (reducer grid (first instructions)))))))
 
 (defn solve-part-1 [instructions]
   (let [turn-on-update-fn (fn [_] 1)
