@@ -18,28 +18,17 @@
     (let [idx (unchecked-add (unchecked-multiply grid-size row) col)]
       (aset grid idx (Math/max 0 ^long (update-fn ^long (aget grid idx)))))))
 
-(defn apply-instruction! [turn-on-update-fn
-                          turn-off-update-fn
-                          toggle-update-fn
-                          ^longs grid
-                          [instruction-type box]]
-  (cond
-    (= instruction-type :turn-on) (update-grid! turn-on-update-fn box grid)
-    (= instruction-type :turn-off) (update-grid! turn-off-update-fn box grid)
-    (= instruction-type :toggle) (update-grid! toggle-update-fn box grid)
-    :else grid))
-
 (defn solve [turn-on-update-fn!
              turn-off-update-fn!
              toggle-update-fn!
              instructions]
   (let [^longs grid (init-light-grid)]
-    (doseq [instruction instructions]
-      (apply-instruction! turn-on-update-fn!
-                          turn-off-update-fn!
-                          toggle-update-fn!
-                          grid
-                          instruction))
+    (doseq [[instruction-type box] instructions]
+      (cond
+        (= instruction-type :turn-on) (update-grid! turn-on-update-fn! box grid)
+        (= instruction-type :turn-off) (update-grid! turn-off-update-fn! box grid)
+        (= instruction-type :toggle) (update-grid! toggle-update-fn! box grid)
+        :else grid))
     grid))
 
 (defn count-positives [^longs arr]
