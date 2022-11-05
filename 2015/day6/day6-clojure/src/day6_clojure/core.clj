@@ -40,7 +40,11 @@
                           toggle-update-fn!
                           grid
                           instruction))
-    (vec grid)))
+    grid))
+
+(defn count-positives [^longs arr]
+  (areduce arr i ret (long 0)
+           (if (> (aget arr i) 0) (inc ret) ret)))
 
 (defn solve-part-1 [instructions]
   (let [turn-on-update-fn (fn [_] 1)
@@ -48,8 +52,12 @@
         toggle-update-fn (fn [^long b] (if (zero? b) 1 0))]
     (->> instructions
          (solve turn-on-update-fn turn-off-update-fn toggle-update-fn)
-         (filter (fn [^long x] (> x 0)))
-         (count))))
+         (count-positives))))
+
+(defn sum-positives [^longs arr]
+  (areduce arr i ret (long 0)
+           (let [val (aget arr i)]
+             (if (> val 0) (+ ret val) ret))))
 
 (defn solve-part-2 [instructions]
   (let [turn-on-update-fn inc
@@ -57,8 +65,7 @@
         toggle-update-fn (fn [^long x] (+ x 2))]
     (->> instructions
          (solve turn-on-update-fn turn-off-update-fn toggle-update-fn)
-         (filter (fn [^long x] (> x 0)))
-         (apply +))))
+         (sum-positives))))
 
 (defn parse-turn-on [line]
   (let [xs (rest (re-find #"turn on (\d+)\,(\d+) through (\d+)\,(\d+)" line))]
@@ -97,10 +104,10 @@
   (read-line))
 
 (defn -main
-  [& _]
-  (let [file-name (prompt "Enter file name: ")
-        instructions (parse-from-file file-name)
-        part-1-ans (solve-part-1 instructions)
-        part-2-ans (solve-part-2 instructions)]
-    (println "Part 1: " part-1-ans)
-    (println "Part 2: " part-2-ans)))
+  ([] (-main (prompt "Enter file name: ")))
+  ([file-name & _]
+   (let [instructions (parse-from-file file-name)
+         part-1-ans (solve-part-1 instructions)
+         part-2-ans (solve-part-2 instructions)]
+     (println "Part 1: " part-1-ans)
+     (println "Part 2: " part-2-ans))))
