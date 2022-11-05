@@ -1,3 +1,4 @@
+use std::env;
 use std::io::Write;
 
 fn prompt(msg: &'static str) -> String {
@@ -141,7 +142,12 @@ fn solve_part_2(instructions: &Vec<Instruction>) -> u64 {
 }
 
 fn main() {
-    let file_name = prompt("Enter file name: ");
+    let args: Vec<_> = env::args().collect();
+    let file_name = if args.len() > 1 {
+        args[1].to_owned()
+    } else {
+        prompt("Enter file name: ")
+    };
     let file_contents =
         std::fs::read_to_string(&file_name).expect(&format!("Unable to read file: {}", file_name));
     let instructions = Instruction::from_lines(file_contents.lines())

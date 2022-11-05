@@ -10,6 +10,7 @@ import qualified Data.Array.Base as AIO
 import qualified Data.Array.IO as AIO
 import Data.Bits (xor)
 import qualified Data.Text as T
+import qualified System.Environment as SE
 import System.IO (hFlush, stdout)
 import qualified Text.Read as T
 
@@ -106,7 +107,10 @@ solvePart2 instructions = do
 
 main :: IO ()
 main = do
-  filename <- prompt "Enter file name: "
+  args <- SE.getArgs
+  filename <- case args of
+    [filename] -> return filename
+    _ -> prompt "Enter file name: "
   fileLines <- T.lines . T.pack <$> readFile filename
 
   let instructions = case parseLines fileLines of
