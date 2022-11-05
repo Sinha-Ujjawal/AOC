@@ -13,9 +13,9 @@
 (defn update-grid! [update-fn
                     [^long rowl ^long coll ^long rowu ^long colu]
                     ^longs grid]
-  (doseq [^long row (range rowl (inc rowu))
-          ^long col (range coll (inc colu))]
-    (let [idx (+ (* grid-size row) col)]
+  (doseq [^long row (range rowl (unchecked-inc rowu))
+          ^long col (range coll (unchecked-inc colu))]
+    (let [idx (unchecked-add (unchecked-multiply grid-size row) col)]
       (aset grid idx (Math/max 0 ^long (update-fn ^long (aget grid idx)))))))
 
 (defn apply-instruction! [turn-on-update-fn
@@ -44,7 +44,7 @@
 
 (defn count-positives [^longs arr]
   (areduce arr i ret (long 0)
-           (if (> (aget arr i) 0) (inc ret) ret)))
+           (if (> (aget arr i) 0) (unchecked-inc ret) ret)))
 
 (defn solve-part-1 [instructions]
   (let [turn-on-update-fn (fn [_] 1)
@@ -57,12 +57,12 @@
 (defn sum-positives [^longs arr]
   (areduce arr i ret (long 0)
            (let [val (aget arr i)]
-             (if (> val 0) (+ ret val) ret))))
+             (if (> val 0) (unchecked-add ret val) ret))))
 
 (defn solve-part-2 [instructions]
-  (let [turn-on-update-fn inc
-        turn-off-update-fn dec
-        toggle-update-fn (fn [^long x] (+ x 2))]
+  (let [turn-on-update-fn unchecked-inc
+        turn-off-update-fn unchecked-dec
+        toggle-update-fn (fn [^long x] (unchecked-add x 2))]
     (->> instructions
          (solve turn-on-update-fn turn-off-update-fn toggle-update-fn)
          (sum-positives))))
