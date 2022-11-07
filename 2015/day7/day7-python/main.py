@@ -118,9 +118,9 @@ def try_parse_bin_op(bin_op: str, line: str) -> Optional[Tuple[Probe, Probe, Wir
     if not matches:
         return None
 
-    n, n, w, *rest = matches[0]
-    if n != "":
-        return (U16(int(n)), U16(int(n)), w)
+    n1, n2, w, *rest = matches[0]
+    if n1 != "":
+        return (U16(int(n1)), U16(int(n2)), w)
 
     w1, n, w2, *rest = rest
     if w1 != "":
