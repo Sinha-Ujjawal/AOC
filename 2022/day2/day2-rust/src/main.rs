@@ -61,7 +61,7 @@ impl Score for Outcome {
 
 impl Hand {
     fn decide(&self, outcome: &Outcome) -> Self {
-        match (self, &outcome) {
+        match (self, outcome) {
             (Hand::Rock, Outcome::Lost) => Hand::Scissor,
             (Hand::Paper, Outcome::Lost) => Hand::Rock,
             (Hand::Scissor, Outcome::Lost) => Hand::Paper,
