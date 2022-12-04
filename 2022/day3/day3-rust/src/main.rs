@@ -10,11 +10,6 @@ fn prompt(msg: &'static str) -> std::io::Result<String> {
     Ok(ret.trim().to_string())
 }
 
-#[derive(Debug)]
-enum MyError {
-    IOError(std::io::Error),
-}
-
 trait Priority {
     fn priority(&self) -> usize;
 }
@@ -67,9 +62,9 @@ fn solve_part2(string: &str) -> usize {
     solve(rust_sacks, 3)
 }
 
-fn main() -> Result<(), MyError> {
-    let file_path = prompt("Enter file path: ").map_err(MyError::IOError)?;
-    let contents = std::fs::read_to_string(file_path).map_err(MyError::IOError)?;
+fn main() -> std::io::Result<()> {
+    let file_path = prompt("Enter file path: ")?;
+    let contents = std::fs::read_to_string(file_path)?;
     let part1_ans = solve_part1(&contents);
     println!("Part 1: {}", part1_ans);
     let part2_ans = solve_part2(&contents);
