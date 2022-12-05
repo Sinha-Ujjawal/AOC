@@ -138,7 +138,7 @@ solvePart2 = topStack . execute applyMove
         fromStack = fromMaybe [] $ M.lookup from stacks
         toStack = fromMaybe [] $ M.lookup to stacks
         (items, fromStack') = L.splitAt qty fromStack
-        toStack' = pushMany (reverse items) toStack
+        toStack' = items ++ toStack
 
 main :: IO ()
 main = do
