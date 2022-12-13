@@ -3,7 +3,6 @@
 
 import Data.Char (isDigit)
 import qualified Data.Map as M
-import Data.Maybe (mapMaybe)
 import qualified Data.Set as S
 import System.IO (hFlush, stdout)
 import Text.Read (readMaybe)
@@ -19,16 +18,7 @@ prompt msg = do
   getLine
 
 data Digit
-  = NegNine
-  | NegEight
-  | NegSeven
-  | NegSix
-  | NegFive
-  | NegFour
-  | NegThree
-  | NegTwo
-  | NegOne
-  | Zero
+  = Zero
   | One
   | Two
   | Three
@@ -54,16 +44,6 @@ instance Read Digit where
       (['7'], rest) -> [(Seven, rest)]
       (['8'], rest) -> [(Eight, rest)]
       (['9'], rest) -> [(Nine, rest)]
-      ("-0", rest) -> [(Zero, rest)]
-      ("-1", rest) -> [(NegOne, rest)]
-      ("-2", rest) -> [(NegTwo, rest)]
-      ("-3", rest) -> [(NegThree, rest)]
-      ("-4", rest) -> [(NegFour, rest)]
-      ("-5", rest) -> [(NegFive, rest)]
-      ("-6", rest) -> [(NegSix, rest)]
-      ("-7", rest) -> [(NegSeven, rest)]
-      ("-8", rest) -> [(NegEight, rest)]
-      ("-9", rest) -> [(NegNine, rest)]
       _otherwise -> []
 
 data Index = Index {row :: !Int, col :: !Int} deriving (Show, Eq, Ord)
