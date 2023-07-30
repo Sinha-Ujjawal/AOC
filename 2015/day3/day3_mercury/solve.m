@@ -106,7 +106,7 @@ part_2_visits(Instructions, Index, Length, CurrentCoordSanta, CurrentCoordRoboSa
         if Index < Length then
             CurrentInstruction = string.unsafe_index(Instructions, Index),
             (
-                if (Index `mod` 2) = 0 then
+                if (Index /\ 1) = 0 then
                     NextCoordSanta = next_coord(CurrentCoordSanta, CurrentInstruction),
                     NextCoordRoboSanta = CurrentCoordRoboSanta
                 else
