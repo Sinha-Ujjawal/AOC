@@ -121,7 +121,9 @@ array_push(Item, !.Array, !:Array) :-
     ;       toggle
     ;       turn_off.
 
-:- type instruction ---> instruction(instruction_type, coord, coord).
+:- type box ---> box(top_left :: coord, bottom_right :: coord).
+
+:- type instruction ---> instruction(instruction_type, box).
 
 :- type parse_error ---> parse_error(line_no :: int, line :: string).
 
@@ -163,9 +165,9 @@ parse_instruction(InstructionAsString, Out) :-
     (
         if
             parse_instruction_type(InstructionAsString, InstructionType, Rest),
-            parse_rest(Rest, CoordFrom, CoordTo)
+            parse_box(Rest, Box)
         then
-            Out = instruction(InstructionType, CoordFrom, CoordTo)
+            Out = instruction(InstructionType, Box)
         else
             false
     ).
@@ -186,13 +188,14 @@ parse_instruction_type(InstructionAsString, InstructionType, Rest) :-
             false
     ).
 
-:- pred parse_rest(string::in, coord::out, coord::out) is semidet.
-parse_rest(CoordPartOfString, CoordFrom, CoordTo) :-
+:- pred parse_box(string::in, box::out) is semidet.
+parse_box(CoordPartOfString, Out) :-
     SplitString = string.split_at_string(" through ", CoordPartOfString),
     (
         SplitString = [CoordFromString, CoordToString],
         parse_coord(CoordFromString, CoordFrom),
-        parse_coord(CoordToString, CoordTo)
+        parse_coord(CoordToString, CoordTo),
+        Out = box(CoordFrom, CoordTo)
     ;
         false
     ).
@@ -209,19 +212,34 @@ parse_coord(CoordString, Coord) :-
         false
     ).
 
-:- pred int_loop(
-    int::in,
-    int::in,
-    int::in,
-    pred(int, S, S)::in(pred(in, in, out) is det),
+:- pred fold_box_diag(
+    pred(coord, S, S)::in(pred(in, in, out) is det),
+    box::in,
     S::in,
     S::out
 ) is det.
-int_loop(Frm, To, Step, Body, !.State, !:State) :-
+fold_box_diag(FolderPred, box(coord(X1, Y1), coord(X2, Y2)), !S) :-
     (
-        if Frm =< To then
-            Body(Frm, !.State, !:State),
-            int_loop(Frm+Step, To, Step, Body, !.State, !:State)
+        if X1 =< X2 then
+            fold_box_diag(FolderPred, X1, Y1, Y2, !S),
+            fold_box_diag(FolderPred, box(coord(X1+1, Y1), coord(X2, Y2)), !S)
+        else
+            true
+    ).
+
+:- pred fold_box_diag(
+    pred(coord, S, S)::in(pred(in, in, out) is det),
+    int::in,
+    int::in,
+    int::in,
+    S::in,
+    S::out
+) is det.
+fold_box_diag(FolderPred, X1, Y1, Y2, !S) :-
+    (
+        if Y1 =< Y2 then
+            FolderPred(coord(X1, Y1), !S),
+            fold_box_diag(FolderPred, X1, Y1+1, Y2, !S)
         else
             true
     ).
@@ -246,11 +264,7 @@ solve(
     array.foldl(
         (
             pred(Instruction::in, !.Array::in, !:Array::out) is det :-
-                Instruction = instruction(
-                    InstructionType,
-                    coord(CoordX1, CoordY1),
-                    coord(CoordX2, CoordY2)
-                ),
+                Instruction = instruction(InstructionType, Box),
                 (
                     InstructionType = turn_on,
                     BrightnessUpdater = TurnOnBrightnessUpdater
@@ -261,23 +275,15 @@ solve(
                     InstructionType = turn_off,
                     BrightnessUpdater = TurnOffBrightnessUpdater
                 ),
-                int_loop(
-                    CoordX1, CoordX2, 1,
+                fold_box_diag(
                     (
-                        pred(CoordX::in, !.Array::in, !:Array::out) is det :-
-                            int_loop(
-                                CoordY1, CoordY2, 1,
-                                (
-                                    pred(CoordY::in, !.Array::in, !:Array::out) is det :-
-                                        Index = (CoordX * ArrayWidth) + CoordY,
-                                        array.unsafe_lookup(!.Array, Index, OldValue),
-                                        BrightnessUpdater(OldValue, NewValue),
-                                        array.unsafe_set(Index, NewValue, !.Array, !:Array)
-                                ),
-                                !.Array,
-                                !:Array
-                            )
+                        pred(coord(CoordX, CoordY)::in, !.Array::in, !:Array::out) is det:-
+                            Index = (CoordX * ArrayWidth) + CoordY,
+                            array.unsafe_lookup(!.Array, Index, OldValue),
+                            BrightnessUpdater(OldValue, NewValue),
+                            array.unsafe_set(Index, NewValue, !.Array, !:Array)
                     ),
+                    Box,
                     !.Array,
                     !:Array
                 )
