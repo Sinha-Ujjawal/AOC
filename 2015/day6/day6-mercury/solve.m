@@ -52,19 +52,65 @@ read_file_path(FilePath, !IO) :-
             prompt_for_file_path(FilePath, !IO)
     ).
 
-:- pred read_input(list(string)::out, io::di, io::uo) is det.
+:- func string_as_lines_array(string) = array(string).
+:- mode string_as_lines_array(in) = array_uo is det.
+string_as_lines_array(String) = Array :-
+    string_as_lines_array(String, 0, string.length(String), array.make_empty_array, Array).
+
+:- pred string_as_lines_array(
+    string::in,
+    int::in,
+    int::in,
+    array(string)::array_di,
+    array(string)::array_uo
+) is det.
+string_as_lines_array(String, Frm, Length, !.Array, !:Array) :-
+    (
+        if string.sub_string_search_start(String, "\n", Frm, To), Frm =< To then
+            array_push(string.between(String, Frm, To), !.Array, !:Array),
+            string_as_lines_array(String, To+1, Length, !.Array, !:Array)
+        else if Frm < Length then
+            array_push(string.between(String, Frm, Length), !.Array, !:Array),
+            !:Array = !.Array
+        else
+            !:Array = !.Array
+    ).
+
+
+:- pred read_named_file_as_lines_array(
+    string::in,
+    io.res(array(string))::out,
+    io::di, io::uo
+) is det.
+read_named_file_as_lines_array(FilePath, LinesRes, !IO) :-
+    io.read_named_file_as_string(FilePath, Res, !IO),
+    (
+        Res = ok(String),
+        LinesRes = ok(string_as_lines_array(String))
+    ;
+        Res = error(ErrorCode),
+        LinesRes = error(ErrorCode)
+    ).
+
+:- pred read_input(array(string)::out, io::di, io::uo) is det.
 read_input(Lines, !IO) :-
     read_file_path(FilePath, !IO),
-    io.read_named_file_as_lines(FilePath, LinesRes, !IO),
+    read_named_file_as_lines_array(FilePath, LinesRes, !IO),
     (
         LinesRes = ok(Lines),
         io.format("Solving File: %s\n", [s(FilePath)], !IO)
     ;
         LinesRes = error(ErrorCode),
-        Lines = [],
+        Lines = array.make_empty_array,
         io.set_exit_status(1, !IO),
         io.format("%s\n", [s(io.error_message(ErrorCode))], !IO)
     ).
+
+:- pred array_push(T::in, array(T)::array_di, array(T)::array_uo) is det.
+array_push(Item, !.Array, !:Array) :-
+    OldSize = array.size(!.Array),
+    NewSize = OldSize + 1,
+    array.resize(NewSize, Item, !.Array, !:Array).
 
 :- type result(Ok, Err) ---> ok(Ok); error(Err).
 
@@ -79,28 +125,37 @@ read_input(Lines, !IO) :-
 
 :- type parse_error ---> parse_error(line_no :: int, line :: string).
 
-:- type result_instructions == result(list(instruction), parse_error).
+:- type result_instructions == result(array(instruction), parse_error).
 
-:- pred parse_instructions(list(string)::in, result_instructions::out) is det.
+:- pred parse_instructions(array(string)::in, result_instructions::out) is det.
 parse_instructions(InstructionsAsLines, Out) :-
-    parse_instructions(InstructionsAsLines, Out, 1, []).
+    ArrayIn = array.make_empty_array,
+    parse_instructions(
+        InstructionsAsLines,
+        0, array.size(InstructionsAsLines),
+        ArrayIn,
+        Out
+    ).
 
 :- pred parse_instructions(
-    list(string)::in,
-    result_instructions::out,
-    int::in,
-    list(instruction)::in
+    array(string)::in,
+    int::in, int::in,
+    array(instruction)::array_di,
+    result_instructions::out
 ) is det.
-parse_instructions([], Out, _, Acc) :-
-    list.reverse(Acc, AccRev),
-    Out = ok(AccRev).
-parse_instructions([InstructionAsString|Rest], Out, LineNo, Acc) :-
+parse_instructions(InstructionsAsLines, Index, Length, Array, Out) :-
     (
-        if parse_instruction(InstructionAsString, Instruction) then
-            list.cons(Instruction, Acc, NewAcc),
-            parse_instructions(Rest, Out, LineNo+1, NewAcc)
+        if Index < Length then
+            array.unsafe_lookup(InstructionsAsLines, Index, InstructionAsString),
+            (
+                if parse_instruction(InstructionAsString, Instruction) then
+                    array_push(Instruction, Array, NewArray),
+                    parse_instructions(InstructionsAsLines, Index+1, Length, NewArray, Out)
+                else
+                    Out = error(parse_error(Index+1, InstructionAsString))
+            )
         else
-            Out = error(parse_error(LineNo, InstructionAsString))
+            Out = ok(Array)
     ).
 
 :- pred parse_instruction(string::in, instruction::out) is semidet.
@@ -172,7 +227,7 @@ int_loop(Frm, To, Step, Body, !.State, !:State) :-
     ).
 
 :- pred solve(
-    list(instruction)::in,
+    array(instruction)::in,
     pred(int, int)::in(pred(in, out) is det),
     pred(int, int)::in(pred(in, out) is det),
     pred(int, int)::in(pred(in, out) is det),
@@ -188,7 +243,7 @@ solve(
     array_width(ArrayWidth),
     array_size(ArraySize),
     array.init(ArraySize, 0, ArrayIn),
-    list.foldl(
+    array.foldl(
         (
             pred(Instruction::in, !.Array::in, !:Array::out) is det :-
                 Instruction = instruction(
@@ -215,9 +270,9 @@ solve(
                                 (
                                     pred(CoordY::in, !.Array::in, !:Array::out) is det :-
                                         Index = (CoordX * ArrayWidth) + CoordY,
-                                        OldValue = array.lookup(!.Array, Index),
+                                        array.unsafe_lookup(!.Array, Index, OldValue),
                                         BrightnessUpdater(OldValue, NewValue),
-                                        array.set(Index, NewValue, !.Array, !:Array)
+                                        array.unsafe_set(Index, NewValue, !.Array, !:Array)
                                 ),
                                 !.Array,
                                 !:Array
@@ -233,7 +288,7 @@ solve(
     ),
     true.
 
-:- func solve_part1(list(instruction)) = int.
+:- func solve_part1(array(instruction)) = int.
 solve_part1(Instructions) = Ret :-
     solve(
         Instructions,
@@ -252,7 +307,7 @@ solve_part1(Instructions) = Ret :-
         Ret
     ).
 
-:- func solve_part2(list(instruction)) = int.
+:- func solve_part2(array(instruction)) = int.
 solve_part2(Instructions) = Ret :-
     solve(
         Instructions,
@@ -277,7 +332,8 @@ main(!IO) :-
     (
         InstructionsOrErr = ok(Instructions),
         io.format("Part 1: %d\n", [i(solve_part1(Instructions))], !IO),
-        io.format("Part 2: %d\n", [i(solve_part2(Instructions))], !IO)
+        io.format("Part 2: %d\n", [i(solve_part2(Instructions))], !IO),
+        true
     ;
         InstructionsOrErr = error(parse_error(Line, String)),
         io.format("Could not parse line: %d: ""%s""\n", [i(Line), s(String)], !IO)       
