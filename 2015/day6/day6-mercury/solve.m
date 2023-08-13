@@ -196,8 +196,6 @@ parse_box(CoordPartOfString, Out) :-
         parse_coord(CoordFromString, CoordFrom),
         parse_coord(CoordToString, CoordTo),
         Out = box(CoordFrom, CoordTo)
-    ;
-        false
     ).
 
 :- pred parse_coord(string::in, coord::out) is semidet.
@@ -208,8 +206,6 @@ parse_coord(CoordString, Coord) :-
         string.to_int(CoordXString, CoordX),
         string.to_int(CoordYString, CoordY),
         Coord = coord(CoordX, CoordY)
-    ;
-        false
     ).
 
 :- pred fold_box_diag(
@@ -291,23 +287,20 @@ solve(
         Instructions,
         ArrayIn,
         ArrayOut
-    ),
-    true.
+    ).
 
 :- func solve_part1(array(instruction)) = int.
 solve_part1(Instructions) = Ret :-
     solve(
         Instructions,
-        (pred(_::in, BOut::out) is det :- BOut = 1),
-        (pred(BIn::in, BOut::out) is det :- ( if BIn > 0 then BOut = 0 else BOut = 1 )),
-        (pred(_::in, BOut::out) is det :- BOut = 0),
+        pred(_::in, BOut::out) is det :- BOut = 1,
+        pred(BIn::in, BOut::out) is det :- ( if BIn > 0 then BOut = 0 else BOut = 1 ),
+        pred(_::in, BOut::out) is det :- BOut = 0,
         Array
     ),
     array.foldl(
-        (
-            pred(B::in, PrevCount::in, NextCount::out) is det:-
-                ( if B > 0 then NextCount = PrevCount + 1 else NextCount = PrevCount )
-        ),
+        pred(B::in, PrevCount::in, NextCount::out) is det:-
+            ( if B > 0 then NextCount = PrevCount + 1 else NextCount = PrevCount ),
         Array,
         0,
         Ret
@@ -317,16 +310,14 @@ solve_part1(Instructions) = Ret :-
 solve_part2(Instructions) = Ret :-
     solve(
         Instructions,
-        (pred(BIn::in, BOut::out) is det :- BOut = BIn + 1),
-        (pred(BIn::in, BOut::out) is det :- BOut = BIn + 2),
-        (pred(BIn::in, BOut::out) is det :- ( if BIn > 0 then BOut = BIn - 1 else BOut = BIn )),
+        pred(BIn::in, BOut::out) is det :- BOut = BIn + 1,
+        pred(BIn::in, BOut::out) is det :- BOut = BIn + 2,
+        pred(BIn::in, BOut::out) is det :- ( if BIn > 0 then BOut = BIn - 1 else BOut = BIn ),
         Array
     ),
     array.foldl(
-        (
-            pred(B::in, Prev::in, Next::out) is det:-
-                Next = Prev + B
-        ),
+        pred(B::in, Prev::in, Next::out) is det:-
+            Next = Prev + B,
         Array,
         0,
         Ret
