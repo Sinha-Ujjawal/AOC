@@ -141,15 +141,15 @@ func parseCoord(coordAsString *string) (*coord, bool) {
 	return &coord, true
 }
 
-type brightnessUpdater = func(int) int
+type brightnessUpdater = func(uint) uint
 
 func solve(
 	instructions []instruction,
 	turnOnBrightnessUpdater brightnessUpdater,
 	toggleBrightnessUpdater brightnessUpdater,
 	turnOffBrightnessUpdater brightnessUpdater,
-) []int {
-	grid := make([]int, 1000*1000)
+) []uint {
+	grid := make([]uint, 1000*1000)
 	for _, instruction := range instructions {
 		var brightnessUpdater brightnessUpdater
 		switch instruction.instructionType {
@@ -172,20 +172,20 @@ func solve(
 	return grid
 }
 
-func solvePart1(instructions []instruction) int {
+func solvePart1(instructions []instruction) uint {
 	grid := solve(
 		instructions,
-		func(b int) int { return 1 },
-		func(b int) int {
+		func(b uint) uint { return 1 },
+		func(b uint) uint {
 			if b > 0 {
 				return 0
 			} else {
 				return 1
 			}
 		},
-		func(b int) int { return 0 },
+		func(b uint) uint { return 0 },
 	)
-	var res int = 0
+	var res uint = 0
 	for _, val := range grid {
 		if val > 0 {
 			res += 1
@@ -194,19 +194,19 @@ func solvePart1(instructions []instruction) int {
 	return res
 }
 
-func solvePart2(instructions []instruction) int {
+func solvePart2(instructions []instruction) uint {
 	grid := solve(
 		instructions,
-		func(b int) int { return b + 1 },
-		func(b int) int { return b + 2 },
-		func(b int) int {
+		func(b uint) uint { return b + 1 },
+		func(b uint) uint { return b + 2 },
+		func(b uint) uint {
 			if b == 0 {
 				return 0
 			}
 			return b - 1
 		},
 	)
-	var res int = 0
+	var res uint = 0
 	for _, val := range grid {
 		res += val
 	}
@@ -222,6 +222,17 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("Part 1: %d\n", solvePart1(instructions))
-	fmt.Printf("Part 2: %d\n", solvePart2(instructions))
+
+	part1Ch := make(chan uint, 1)
+	go func() {
+		part1Ch <- solvePart1(instructions)
+	}()
+
+	part2Ch := make(chan uint, 1)
+	go func() {
+		part2Ch <- solvePart2(instructions)
+	}()
+
+	fmt.Printf("Part 1: %d\n", <-part1Ch)
+	fmt.Printf("Part 2: %d\n", <-part2Ch)
 }
