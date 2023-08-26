@@ -52,7 +52,6 @@ typedef struct parse_error
     usize line_no;
 } parse_error;
 
-da_typedef(int, da_int);
 da_typedef(string, da_string);
 da_typedef(instruction, da_instruction);
 
@@ -72,6 +71,7 @@ int read_lines(string filepath, da_string *lines)
         line[strcspn(line, "\r\n")] = 0;
         da_push((*lines), line);
     };
+    fclose(fp);
     return 0;
 }
 
