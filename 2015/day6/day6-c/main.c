@@ -100,13 +100,15 @@ bool parse_coord(String_View *coord_as_string_view, coord *ret)
 {
     String_View x_str = sv_chop_by_delim(coord_as_string_view, ',');
     String_View y_str = *coord_as_string_view;
-    usize x = strtoull(x_str.data, NULL, 10);
-    if (errno == ERANGE)
+    char *endptr = NULL;
+    usize x = strtoull(x_str.data, &endptr, 10);
+    if (endptr == NULL)
     {
         return false;
     }
-    usize y = strtoull(y_str.data, NULL, 10);
-    if (errno == ERANGE)
+    endptr = NULL;
+    usize y = strtoull(y_str.data, &endptr, 10);
+    if (endptr == NULL)
     {
         return false;
     }
