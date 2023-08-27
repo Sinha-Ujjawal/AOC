@@ -20,14 +20,12 @@ unsigned int GRID[GRID_SIZE];
 typedef char *string;
 typedef unsigned int usize;
 
-typedef usize instruction_type;
-enum instruction_type
+typedef enum
 {
     turn_on = 1,
     turn_off,
     toggle
-};
-
+} instruction_type;
 
 typedef struct coord
 {
@@ -52,8 +50,8 @@ typedef struct parse_error
     usize line_no;
 } parse_error;
 
-da_typedef(string, da_string);
-da_typedef(instruction, da_instruction);
+da_typedef(string, da_string)
+da_typedef(instruction, da_instruction)
 
 int read_lines(string filepath, da_string *lines)
 {
@@ -102,13 +100,13 @@ bool parse_coord(String_View *coord_as_string_view, coord *ret)
 {
     String_View x_str = sv_chop_by_delim(coord_as_string_view, ',');
     String_View y_str = *coord_as_string_view;
-    usize x = strtoumax(x_str.data, NULL, 10);
-    if (x == UINTMAX_MAX && errno == ERANGE)
+    usize x = strtoull(x_str.data, NULL, 10);
+    if (errno == ERANGE)
     {
         return false;
     }
-    usize y = strtoumax(y_str.data, NULL, 10);
-    if (y == UINTMAX_MAX && errno == ERANGE)
+    usize y = strtoull(y_str.data, NULL, 10);
+    if (errno == ERANGE)
     {
         return false;
     }

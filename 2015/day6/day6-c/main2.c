@@ -19,13 +19,12 @@ unsigned int GRID_PART_2[GRID_SIZE] = {0};
 typedef char *string;
 typedef unsigned int usize;
 
-typedef usize instruction_type;
-enum instruction_type
+typedef enum
 {
     turn_on = 1,
     turn_off,
     toggle
-};
+} instruction_type;
 
 typedef struct coord
 {
@@ -72,13 +71,13 @@ bool parse_coord(String_View *coord_as_string_view, coord *ret)
 {
     String_View x_str = sv_chop_by_delim(coord_as_string_view, ',');
     String_View y_str = *coord_as_string_view;
-    usize x = strtoumax(x_str.data, NULL, 10);
-    if (x == UINTMAX_MAX && errno == ERANGE)
+    usize x = strtoull(x_str.data, NULL, 10);
+    if (errno == ERANGE)
     {
         return false;
     }
-    usize y = strtoumax(y_str.data, NULL, 10);
-    if (y == UINTMAX_MAX && errno == ERANGE)
+    usize y = strtoull(y_str.data, NULL, 10);
+    if (errno == ERANGE)
     {
         return false;
     }
@@ -244,4 +243,5 @@ defer:
     if (fp != NULL) {
         fclose(fp);
     }
+    return result;
 }
