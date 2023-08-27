@@ -102,13 +102,13 @@ bool parse_coord(String_View *coord_as_string_view, coord *ret)
     String_View y_str = *coord_as_string_view;
     char *endptr = NULL;
     usize x = strtoull(x_str.data, &endptr, 10);
-    if (endptr == NULL)
+    if (endptr == x_str.data)
     {
         return false;
     }
     endptr = NULL;
     usize y = strtoull(y_str.data, &endptr, 10);
-    if (endptr == NULL)
+    if (endptr == y_str.data)
     {
         return false;
     }
