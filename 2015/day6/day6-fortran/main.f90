@@ -156,8 +156,8 @@ end subroutine print_help
 program main
     use m_instruction, only: t_instruction, try_parse_instruction, turn_on, turn_off, toggle
     implicit none
-    character(64), dimension(:), allocatable :: args
-    integer                                  :: num_args, ix
+    integer                                  :: num_args
+    character(64)                            :: filepath
     integer                                  :: read_unit = 1
     integer                                  :: iostat, err
     type(t_instruction)                      :: ins
@@ -176,15 +176,11 @@ program main
         return
     end if
 
-    allocate(args(num_args))
+    call get_command_argument(1, filepath)
 
-    do ix = 1, num_args
-        call get_command_argument(ix, args(ix))
-    end do
-
-    open(file=args(1), unit=read_unit, iostat=iostat, iomsg=iomsg, status="old", action="read")
+    open(file=filepath, unit=read_unit, iostat=iostat, iomsg=iomsg, status="old", action="read")
     if (iostat /= 0) then
-        write (*, "(A, A, A, I1, A)") "Open ", trim(args(1)), " failed with iostat = ", iostat, ", iomsg = " // trim(iomsg)
+        write (*, "(A, A, A, I1, A)") "Open ", trim(filepath), " failed with iostat = ", iostat, ", iomsg = " // trim(iomsg)
         call exit(1)
         return
     end if
