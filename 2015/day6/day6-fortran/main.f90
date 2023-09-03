@@ -5,9 +5,9 @@ module m_string_helper
 contains
     subroutine try_chop_prefix(prefix, string, err)
         implicit none
-        character(len = *), intent(in)       :: prefix
-        character(:), pointer, intent(inout) :: string
-        integer, intent(out)                 :: err
+        character(len = *), intent(in)           :: prefix
+        character(:), allocatable, intent(inout) :: string
+        integer, intent(out)                     :: err
         if (len(string) < len(prefix)) then
             err = 1
         else if (string(1:len(prefix)) == prefix) then
@@ -20,10 +20,10 @@ contains
 
     integer function try_parse_int(string, err) result(ret)
         implicit none
-        character(:), pointer, intent(inout)  :: string
-        integer, intent(out)                  :: err
+        character(:), allocatable, intent(inout)  :: string
+        integer, intent(out)                      :: err
         
-        integer                               :: idx, ascii
+        integer                                   :: idx, ascii
 
         ret = 0
         do idx = 1, len_trim(string)
@@ -42,6 +42,7 @@ contains
             err = 1
         end if
     end function try_parse_int
+
 end module m_string_helper
 
 module m_instruction
@@ -75,8 +76,8 @@ module m_instruction
 contains
     integer(kind(instruction_types)) function try_parse_instruction_type(line, err) result(ret)
         implicit none
-        character(:), pointer, intent(inout)   :: line
-        integer, intent(out)                   :: err
+        character(:), allocatable, intent(inout) :: line
+        integer, intent(out)                     :: err
 
         call try_chop_prefix("turn on ", line, err)
         if (err == 0) then
@@ -101,8 +102,8 @@ contains
 
     type(t_coord) function try_parse_coord(string, err) result(ret)
         implicit none
-        character(:), pointer, intent(inout) :: string
-        integer, intent(out)                 :: err
+        character(:), allocatable, intent(inout) :: string
+        integer, intent(out)                     :: err
 
         ret % x = try_parse_int(string, err)
         if (err /= 0) return
@@ -117,8 +118,8 @@ contains
 
     type(t_box) function try_parse_box(string, err) result(ret)
         implicit none
-        character(:), pointer, intent(inout) :: string
-        integer, intent(out)                 :: err
+        character(:), allocatable, intent(inout) :: string
+        integer, intent(out)                     :: err
 
         ret % top_left = try_parse_coord(string, err)
         if (err /= 0) return
@@ -133,8 +134,8 @@ contains
 
     type(t_instruction) function try_parse_instruction(line, err) result(ret)
         implicit none
-        character(:), pointer, intent(inout) :: line
-        integer, intent(out)                 :: err
+        character(:), allocatable, intent(inout) :: line
+        integer, intent(out)                     :: err
         
         ret % instruction_type = try_parse_instruction_type(line, err)
         if (err /= 0) return
@@ -162,8 +163,8 @@ program main
     integer                                  :: iostat, err
     type(t_instruction)                      :: ins
     character(256)                           :: iomsg
-    character(256), target                   :: buffer
-    character(:), pointer                    :: line
+    character(256)                           :: buffer
+    character(:), allocatable                :: line
     integer                                  :: lx, ux, ly, uy
     integer                                  :: grid_part_1(1000, 1000), part_1_ans
     integer                                  :: grid_part_2(1000, 1000), part_2_ans
@@ -191,7 +192,7 @@ program main
     do
         read(read_unit, "(A)", iostat=iostat) buffer
         if (iostat /= 0) exit
-        line => buffer
+        line = buffer
         ins = try_parse_instruction(line, err)
         if (err /= 0) then
             close(read_unit)
