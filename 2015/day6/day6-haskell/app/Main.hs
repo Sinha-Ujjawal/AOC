@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE StrictData #-}
 
 module Main where
 
@@ -28,30 +29,33 @@ type Brightness = Int
 
 type LightGrid = AIO.IOUArray Int Int
 
+{-# INLINE initLights #-}
 initLights :: IO LightGrid
 initLights = AIO.newArray (0, 1000 * 1000) 0
 
+{-# INLINE forLoop #-}
 forLoop :: (Monad m) => a -> (a -> Bool) -> (a -> a) -> (a -> m ()) -> m ()
 forLoop start cond inc f = go start
   where
     go !x
       | cond x = f x >> go (inc x)
       | otherwise = return ()
-{-# INLINE forLoop #-}
 
 type BrightnessUpdateFn = (Brightness -> Brightness)
 
+{-# INLINE updateGrid #-}
 updateGrid :: BrightnessUpdateFn -> Box -> LightGrid -> IO LightGrid
 updateGrid updateFn ((xl, yl), (xu, yu)) grid = do
   forLoop xl (<= xu) (+ 1) $ \row -> do
     forLoop yl (<= yu) (+ 1) $ \col -> do
       let idx = row * 1000 + col
-      oldValue <- AIO.readArray grid idx
-      AIO.writeArray grid idx (max 0 (updateFn oldValue))
+      oldValue <- AIO.unsafeRead grid idx
+      AIO.unsafeWrite grid idx (max 0 (updateFn oldValue))
   return grid
 
 data Instruction = TurnOn !Box | TurnOff !Box | Toggle !Box deriving (Show, Eq)
 
+{-# INLINE parseCoordinate #-}
 parseCoordinate :: T.Text -> Maybe Coordinate
 parseCoordinate (T.splitOn "," -> [x, y]) = do
   x' <- T.readMaybe $ T.unpack x
@@ -59,6 +63,7 @@ parseCoordinate (T.splitOn "," -> [x, y]) = do
   return (x', y')
 parseCoordinate _ = Nothing
 
+{-# INLINE parseBox #-}
 parseBox :: T.Text -> Maybe Box
 parseBox (T.splitOn " through " -> [startCoordText, endCoordText]) = do
   startCoord <- parseCoordinate startCoordText
@@ -66,15 +71,18 @@ parseBox (T.splitOn " through " -> [startCoordText, endCoordText]) = do
   return (startCoord, endCoord)
 parseBox _ = Nothing
 
+{-# INLINE parseLine #-}
 parseLine :: T.Text -> Maybe Instruction
 parseLine (T.stripPrefix "turn on " -> Just rest) = fmap TurnOn (parseBox rest)
 parseLine (T.stripPrefix "turn off " -> Just rest) = fmap TurnOff (parseBox rest)
 parseLine (T.stripPrefix "toggle " -> Just rest) = fmap Toggle (parseBox rest)
 parseLine _ = Nothing
 
+{-# INLINE parseLines #-}
 parseLines :: [T.Text] -> Maybe [Instruction]
 parseLines = traverse parseLine
 
+{-# INLINE solve #-}
 solve :: (BrightnessUpdateFn, BrightnessUpdateFn, BrightnessUpdateFn) -> [Instruction] -> IO LightGrid
 solve (turnOnUpdateFn, turnOffUpdateFn, toggleUpdateFn) instructions = do
   grid <- initLights
@@ -85,26 +93,29 @@ solve (turnOnUpdateFn, turnOffUpdateFn, toggleUpdateFn) instructions = do
       Toggle box -> updateGrid toggleUpdateFn box grid
   return grid
 
+{-# INLINE solvePart1 #-}
 solvePart1 :: [Instruction] -> IO Int
 solvePart1 instructions = do
   grid <- solve (turnOnUpdateFn, turnOffUpdateFn, toggleUpdateFn) instructions
   elems <- AIO.getElems grid
-  return . length $ filter (> 0) elems
+  return $ sum elems
   where
     turnOnUpdateFn = const 1
     turnOffUpdateFn = const 0
     toggleUpdateFn b = b `xor` 1
 
+{-# INLINE solvePart2 #-}
 solvePart2 :: [Instruction] -> IO Int
 solvePart2 instructions = do
   grid <- solve (turnOnUpdateFn, turnOffUpdateFn, toggleUpdateFn) instructions
   elems <- AIO.getElems grid
-  return . sum $ filter (> 0) elems
+  return $ sum elems
   where
     turnOnUpdateFn = (+) 1
     turnOffUpdateFn b = if b > 0 then b - 1 else 0
     toggleUpdateFn = (+) 2
 
+{-# INLINE main #-}
 main :: IO ()
 main = do
   args <- SE.getArgs
