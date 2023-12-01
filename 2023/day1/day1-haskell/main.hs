@@ -12,17 +12,18 @@ prompt line = do
   getLine
 
 makeCalibrationValueFunction :: [(T.Text, Int)] -> T.Text -> Int
-makeCalibrationValueFunction patterns = go . digitFilter []
+makeCalibrationValueFunction patterns = go . firstAndLastDigits []
   where
-    digitFilter acc "" = reverse acc
-    digitFilter acc xs =
+    firstAndLastDigits acc "" = reverse acc
+    firstAndLastDigits acc xs =
       case filter (\(pattern, _) -> isJust $ T.stripPrefix pattern xs) patterns of
-        [] -> digitFilter acc (T.tail xs)
-        ((_, v) : _) -> digitFilter (v : acc) (T.tail xs)
+        [] -> firstAndLastDigits acc (T.tail xs)
+        ((_, v) : _) -> firstAndLastDigits (if length acc < 2 then v : acc else v : tail acc) (T.tail xs)
 
     go [] = 0
     go [x] = x * 11
-    go (x : xs) = x * 10 + last xs
+    go [x,y] = x * 10 + y
+    go _ = error "Unreachable!"
 
 solveForFile :: String -> IO (Int, Int)
 solveForFile filename =
