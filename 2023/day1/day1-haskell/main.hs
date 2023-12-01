@@ -1,6 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-import Data.Char (digitToInt, isDigit)
 import Data.Maybe (isJust)
 import Data.Text qualified as T
 import System.IO (hFlush, stdout)
