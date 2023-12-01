@@ -1,5 +1,4 @@
 from typing import Tuple, Dict, Callable
-from itertools import islice
 from pathlib import Path
 
 def mk_calib_fn(patterns: Dict[str, int]) -> Callable[[str], int]:
