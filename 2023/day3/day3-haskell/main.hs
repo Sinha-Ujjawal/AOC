@@ -16,7 +16,6 @@ enumerate start = zip [start..]
 
 type EngineSchematic = A.Array (Int, Int) Char
 type PartNumber = (Char, (Int, Int), Int)
-type EngineInfo = (Int, Int)
 
 engineSchematicFromString :: String -> EngineSchematic
 engineSchematicFromString text =
@@ -80,11 +79,11 @@ solvePart1ForFile :: String -> IO Int
 solvePart1ForFile = fmap solvePart1ForInput . engineSchematicFromFile
 
 solvePart2ForInput :: EngineSchematic -> Int
-solvePart2ForInput = sum . fmap (uncurry (*)) . engineOnly . extractPartNumbersFromEngineSchematic
+solvePart2ForInput = sum . gearRatios . extractPartNumbersFromEngineSchematic
   where
-    engineOnly :: [PartNumber] -> [EngineInfo]
-    engineOnly =
-        fmap (\[(_, _, n1), (_, _, n2)] -> (n1, n2))
+    gearRatios :: [PartNumber] -> [Int]
+    gearRatios =
+        fmap (\[(_, _, n1), (_, _, n2)] -> n1*n2)
         . filter ((== 2) . length)
         . L.groupBy (\(_, idx1, _) (_, idx2, _) -> idx1 == idx2)
         . L.sortOn (\(_, idx, _) -> idx)
