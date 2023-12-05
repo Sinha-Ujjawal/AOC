@@ -15,6 +15,10 @@ prompt l = do
     hFlush stdout
     getLine
 
+pairwise :: [a] -> [(a, a)]
+pairwise (x1 : x2 : xs) = (x1, x2) : pairwise xs
+pairwise _              = []
+
 data Almanac
     = Almanac {
         seeds                    :: [Int],
@@ -155,12 +159,15 @@ solvePart1ForFile filePath = do
 
 solvePart2ForInput :: Almanac -> Int
 solvePart2ForInput alm =
-    minimumLocationFromSeedRanges 99999999
+    minimum
+    . fmap (
+        minimum
+        . fmap fst
+        . seedLocations alm
+        . (\(x, n) -> (x, x+n))
+    )
+    . pairwise
     $ seeds alm
-  where
-    minimumLocationFromSeedRanges :: Int -> [Int] -> Int
-    minimumLocationFromSeedRanges acc (start : n : rest) = minimumLocationFromSeedRanges (minimum (fst <$> seedLocations alm (start, start+n)) `min`  acc) rest
-    minimumLocationFromSeedRanges acc _                  = acc
 
 solvePart2ForFile :: String -> IO Int
 solvePart2ForFile filePath = do
