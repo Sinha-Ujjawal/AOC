@@ -160,7 +160,7 @@ solvePart2ForInput alm =
   where
     minimumLocationFromSeedRanges :: Int -> [Int] -> Int
     minimumLocationFromSeedRanges acc (start : n : rest) = minimumLocationFromSeedRanges (minimum (fst <$> seedLocations alm (start, start+n)) `min`  acc) rest
-    minimumLocationFromSeedRanges acc _                            = acc
+    minimumLocationFromSeedRanges acc _                  = acc
 
 solvePart2ForFile :: String -> IO Int
 solvePart2ForFile filePath = do
