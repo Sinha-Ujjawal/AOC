@@ -48,13 +48,19 @@ applyMapRange m (start, end) =
         []
     else
         case M.lookupLE start m of
-            Nothing -> [(start, end)]
-            Just (src, (dest, n)) ->
-                if start < src+n then
-                    let end' = min end (src+n-1)
-                    in (dest + start - src, dest + end' - src) : applyMapRange m (end'+1, end)
-                else
-                    [(start, end)]
+            Nothing ->
+                case M.lookupLE end m of
+                    Nothing -> [(start, end)]
+                    Just (src, (dest, n)) ->
+                        (if start == src then (start, start) else (start, src-1)) : go src end src dest n
+            Just (src, (dest, n)) -> go start end src dest n
+    where
+        go start end src dest n =
+            if start < src+n then
+                let end' = min end (src+n-1)
+                in (dest + start - src, dest + end' - src) : applyMapRange m (end'+1, end)
+            else
+                [(start, end)]
 
 seedLocation :: Almanac -> Int -> Int
 seedLocation
