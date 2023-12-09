@@ -26,7 +26,7 @@ allZeros :: (Eq a, Num a) => [a] -> Bool
 allZeros = all (== 0)
 
 extrapolateForward :: [Int] -> Int
-extrapolateForward xs = go (last xs) xs
+extrapolateForward = go <$> last <*> id
   where
     go acc []  = acc
     go acc [_] = acc
