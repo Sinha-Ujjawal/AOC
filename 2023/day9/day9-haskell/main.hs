@@ -46,12 +46,12 @@ solvePart1ForFile filePath = do
         Just oasisReport -> return $ solvePart1ForOasisReport oasisReport
 
 extrapolateBackward :: [Int] -> Int
-extrapolateBackward = go
+extrapolateBackward = go 0 1
   where
-    go []  = 0
-    go [_] = 0
-    go xs | allZeros xs = 0
-          | otherwise   = head xs - go (diffs xs)
+    go acc _ []  = acc
+    go acc _ [_] = acc
+    go acc sign xs | allZeros xs = acc
+                   | otherwise   = go (acc + (sign * head xs)) (-sign) (diffs xs)
 
 solvePart2ForOasisReport :: OasisReport -> Int
 solvePart2ForOasisReport = sum . fmap extrapolateBackward
