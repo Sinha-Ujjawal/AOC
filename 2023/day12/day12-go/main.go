@@ -118,21 +118,23 @@ func parseInput(lines []string) ([]springAndDesc, error) {
 
 func numPossibilities(springAndDesc springAndDesc) uint {
 	springs := springAndDesc.springs
+	springsLen := uint(len(springs))
 	desc := springAndDesc.desc
+	descLen := uint(len(desc))
 
 	var satisfy func(uint, uint) bool
 	satisfy = func(springI uint, descI uint) bool {
 		d := desc[descI]
 		cntDamaged := uint(0)
-		for _, chr := range springs[springI:min(springI+d, uint(len(springs)))] {
+		for _, chr := range springs[springI:min(springI+d, springsLen)] {
 			if chr == Damaged || chr == Unknown {
 				cntDamaged += 1
 			} else {
-				break
+				return false
 			}
 		}
 		nextIndex := springI + d
-		return (cntDamaged == d) && ((nextIndex >= uint(len(springs))) || (springs[nextIndex] != Damaged))
+		return (cntDamaged == d) && ((nextIndex >= springsLen) || (springs[nextIndex] != Damaged))
 	}
 
 	var dp func(uint, uint) uint
@@ -143,17 +145,19 @@ func numPossibilities(springAndDesc springAndDesc) uint {
 		if ok {
 			return memoVal
 		}
-		if descI >= uint(len(desc)) {
-			if springI < uint(len(springs)) {
-				for chr := range springs[springI:] {
+		if descI >= descLen {
+			if springI < springsLen {
+				for _, chr := range springs[springI:] {
 					if chr == Damaged {
+						memo[key] = 0
 						return 0
 					}
 				}
 			}
+			memo[key] = 1
 			return 1
 		}
-		if springI >= uint(len(springs)) {
+		if springI >= springsLen {
 			memo[key] = 0
 			return 0
 		}
