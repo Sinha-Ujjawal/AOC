@@ -1,4 +1,4 @@
-from typing import Iterator, List, TypeVar
+from typing import Iterator, List, TypeVar, Callable, Optional
 from dataclasses import dataclass
 import argparse
 from pathlib import Path
@@ -27,7 +27,14 @@ class Reflection:
         return self.low + (self.width >> 1) - 1
 
 
-def is_palindrome(items: List[T], low: int, high: int) -> bool:
+def is_palindrome(
+    *,
+    items: List[T],
+    low: int,
+    high: int,
+    diff: Callable[[T, T], int],
+    fix_count: int = 0,
+) -> bool:
     if low > high:
         return False
 
@@ -38,49 +45,104 @@ def is_palindrome(items: List[T], low: int, high: int) -> bool:
         return False
 
     while low < high:
-        if items[low] != items[high]:
+        fix_count -= diff(items[low], items[high])
+        if fix_count < 0:
             return False
         low += 1
         high -= 1
-    return True
+    return fix_count == 0
 
 
-def is_even_palindrome(items: List[T], low: int, high: int) -> bool:
+def is_even_palindrome(
+    *,
+    items: List[T],
+    low: int,
+    high: int,
+    diff: Callable[[T, T], int],
+    fix_count: int = 0,
+) -> bool:
     width = high - low + 1
-    return ((width & 1) == 0) and is_palindrome(items, low, high)
+    return ((width & 1) == 0) and is_palindrome(
+        items=items,
+        low=low,
+        high=high,
+        diff=diff,
+        fix_count=fix_count,
+    )
 
 
 def transpose(image: List[str]) -> List[str]:
     return list(map(lambda xs: "".join(xs), zip(*image)))
 
 
-def find_horizontal_reflections(image: List[str]) -> Iterator[Reflection]:
+def str_diff(xs: str, ys: str) -> int:
+    if len(xs) != len(ys):
+        return abs(len(xs) - len(ys))
+    return sum(1 for x, y in zip(xs, ys) if x != y)
+
+
+def find_horizontal_reflections(
+    image: List[str], fix_count: int = 0
+) -> Iterator[Reflection]:
+    for idx in range(1, len(image)):
+        if is_even_palindrome(
+            items=image,
+            low=0,
+            high=idx,
+            diff=str_diff,
+            fix_count=fix_count,
+        ):
+            yield Reflection(type=ReflectionType.Horizontal, low=0, high=idx)
+
     for idx in range(len(image) - 1):
-        if is_even_palindrome(image, idx, len(image) - 1):
+        if is_even_palindrome(
+            items=image,
+            low=idx,
+            high=len(image) - 1,
+            diff=str_diff,
+            fix_count=fix_count,
+        ):
             yield Reflection(
                 type=ReflectionType.Horizontal, low=idx, high=len(image) - 1
             )
-    for idx in range(1, len(image)):
-        if is_even_palindrome(image, 0, idx):
-            yield Reflection(type=ReflectionType.Horizontal, low=0, high=idx)
 
 
-def find_vertical_reflections(image: List[str]) -> Iterator[Reflection]:
-    for refl in find_horizontal_reflections(transpose(image)):
+def find_vertical_reflections(
+    image: List[str], fix_count: int = 0
+) -> Iterator[Reflection]:
+    for refl in find_horizontal_reflections(transpose(image), fix_count=fix_count):
         refl.type = ReflectionType.Vertical
         yield refl
 
 
-def summary(image: List[str]) -> int:
-    horiz = next(find_horizontal_reflections(image), None)
-    vert = next(find_vertical_reflections(image), None)
-    num_rows = 0 if horiz is None else horiz.idx + 1
-    num_cols = 0 if vert is None else vert.idx + 1
-    return num_cols + num_rows * 100
+def find_mirror(image: List[str], fix_count: int = 0) -> Optional[Reflection]:
+    horiz = next(find_horizontal_reflections(image, fix_count=fix_count), None)
+    if horiz is not None:
+        return horiz
+    vert = next(find_vertical_reflections(image, fix_count=fix_count), None)
+    if vert is not None:
+        return vert
+    return None
+
+
+def summary(image: List[str], fix_count: int = 0) -> int:
+    mirror = find_mirror(image, fix_count=fix_count)
+    if mirror is not None:
+        if mirror.type == ReflectionType.Horizontal:
+            return (mirror.idx + 1) * 100
+        elif mirror.type == ReflectionType.Vertical:
+            return mirror.idx + 1
+        else:
+            return 0
+    return 0
 
 
 def solve_part_1(rocks_and_ashes: List[List[str]]):
     return sum(map(summary, rocks_and_ashes))
+
+
+def solve_part_2(rocks_and_ashes: List[List[str]]):
+    return sum(map(lambda image: summary(image, fix_count=1), rocks_and_ashes))
 
 
 def main():
@@ -95,6 +157,7 @@ def main():
         for rock_and_ashes in Path(filepath).read_text().split("\n\n")
     ]
     print(f"Part 1: {solve_part_1(rocks_and_ashes)}")
+    print(f"Part 2: {solve_part_2(rocks_and_ashes)}")
 
 
 if __name__ == "__main__":
