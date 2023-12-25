@@ -3,7 +3,7 @@ from dataclasses import dataclass, replace
 from enum import IntEnum
 import argparse
 from pathlib import Path
-from itertools import tee
+from itertools import tee, accumulate
 
 T = TypeVar("T")
 
@@ -47,47 +47,37 @@ class Direction(IntEnum):
 
 @dataclass(frozen=True)
 class Dig:
-    __slots__ = ["direction", "meters", "color_of_edge"]
+    __slots__ = ["direction", "meters"]
     direction: Direction
     meters: int
 
 
-@dataclass(frozen=True, order=True)
-class Position:
-    __slots__ = ["row", "col"]
-    row: int
-    col: int
-
-    def proceed(self, direction: Direction, times: int = 1) -> "Position":
-        off_row, off_col = direction.offsets
-        return replace(
-            self, row=self.row + times * off_row, col=self.col + times * off_col
-        )
-
-    def plot(self, direction: Direction) -> Iterable["Position"]:
-        posn = self
-        off_row, off_col = direction.offsets
-        while True:
-            posn = replace(posn, row=posn.row + off_row, col=posn.col + off_col)
-            yield posn
+def translate(
+    posn: Tuple[float, float], direction: Direction, scale: float = 1
+) -> Tuple[float, float]:
+    off_row, off_col = direction.offsets
+    row, col = posn
+    return row + scale * off_row, col + scale * off_col
 
 
-def find_area(polygon: List[Position]) -> float:
+# Area of polygon logic: https://arachnoid.com/area_irregular_polygon/index.html
+def find_area_perim(polygon: Iterable[Tuple[float, float]]) -> Tuple[float, float]:
     a = p = 0.0
-    for prev, next in pairwise(polygon):
-        a += next.row * prev.col - next.col * prev.row
-        p += abs((next.row - prev.row) + (next.col - prev.col) * 1j)
-    return ((abs(a) + abs(p)) / 2) + 1
+    for (ox, oy), (x, y) in pairwise(polygon):
+        a += x * oy - y * ox
+        p += abs((x - ox) + (y - oy) * 1j)
+    return a / 2, p
 
 
 def solve(dig_plan: Iterable[Dig]) -> int:
-    current_posn = start = Position(0, 0)
-    polygon = []
-    for dig in dig_plan:
-        polygon.append(current_posn)
-        current_posn = current_posn.proceed(dig.direction, times=dig.meters)
-    polygon.append(current_posn)
-    return int(abs(find_area(polygon)))
+    a, p = find_area_perim(
+        accumulate(
+            dig_plan,
+            lambda posn, dig: translate(posn, dig.direction, dig.meters),
+            initial=(0, 0),
+        )
+    )
+    return int(a) + (int(p) >> 1) + 1
 
 
 def solve_part_1(lines: List[str]) -> int:
