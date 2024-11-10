@@ -60,6 +60,12 @@
     _da_resize(da, new_capacity);\
 }\
 
+#define da_ensure_capacity(da, min_capacity) {\
+    if ((da)->capacity < (min_capacity)) {\
+        _da_resize(da, min_capacity);\
+    }\
+}\
+
 #define da_grow(da) {\
     if ((da)->count >= (da)->capacity) {\
         _da_grow(da);\
@@ -73,6 +79,15 @@
     }\
     (da)->data[(da)->count] = (item);\
     (da)->count += 1;\
+}\
+
+#define da_shrink(da) {\
+    if ((da)->count > 0) {\
+        (da)->count -= 1;\
+        if (((da)->count > DA_INIT_CAP) && ((da)->count <= (da)->capacity * DA_SHRINK_THRESHOLD)) {\
+            _da_shrink(da);\
+        }\
+    }\
 }\
 
 #define da_pop(da, result) {\

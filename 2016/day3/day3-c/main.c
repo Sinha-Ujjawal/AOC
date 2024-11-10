@@ -22,14 +22,22 @@ int read_entire_file(char *file, string *s) {
         printf("ERROR: could not open file: %s for reading: %s\n", file, strerror(errno));
         return_defer(1);
     }
-    static const size_t buffer_size = 64;
-    static char buffer[buffer_size];
-    while(!feof(fp)) {
-        size_t count = fread(buffer, 1, buffer_size, fp);
-        for (size_t i = 0; i < count; i++) {
-            da_push(s, buffer[i]);
-        }
+    if (fseek(fp, 0, SEEK_END) < 0) {
+        printf("ERROR: could not open file: %s for reading: %s\n", file, strerror(errno));
+        return_defer(1);
     }
+    size_t count = ftell(fp);
+    if (fseek(fp, 0, SEEK_SET) < 0) {
+        printf("ERROR: could not open file: %s for reading: %s\n", file, strerror(errno));
+        return_defer(1);
+    }
+    da_ensure_capacity(s, count);
+    fread(s->data, 1, count, fp);
+    if (ferror(fp)) {
+        printf("ERROR: could not read from file: %s\n", file);
+        return_defer(1);
+    }
+    s->count = count;
 
 defer:
     if (fp != NULL) {

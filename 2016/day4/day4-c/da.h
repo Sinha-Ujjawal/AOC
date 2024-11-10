@@ -60,6 +60,12 @@
     _da_resize(da, new_capacity);\
 }\
 
+#define da_ensure_capacity(da, min_capacity) {\
+    if ((da)->capacity < (min_capacity)) {\
+        _da_resize(da, min_capacity);\
+    }\
+}\
+
 #define da_grow(da) {\
     if ((da)->count >= (da)->capacity) {\
         _da_grow(da);\
