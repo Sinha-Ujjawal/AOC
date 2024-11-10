@@ -167,3 +167,6 @@ rsconnect/
 # End of https://www.toptal.com/developers/gitignore/api/r
 
 **/*-fortran/*.mod
+
+# ignoring vim swap files
+**/*.swp
