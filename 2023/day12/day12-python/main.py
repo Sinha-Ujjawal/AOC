@@ -46,7 +46,7 @@ def num_possibilities(springs: str, desc: List[int]) -> int:
                 return _dp(spring_i+1, desc_i) + proceed
             else:
                 return proceed
-        
+
     return _dp(0, 0)
 
 

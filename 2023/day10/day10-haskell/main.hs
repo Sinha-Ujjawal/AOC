@@ -110,15 +110,15 @@ solvePart2ForInput input@(grid, sNode) = S.size $ S.filter insideLoop allPossibl
     where
         polygon = maximumBy (compare `on` length) $ cycles (neighbors input) sNode
         polygonSet = S.fromList polygon
-        
+
         (low, high) = A.bounds grid
         is = fmap fst polygon
         js = fmap snd polygon
-        
+
         possibleMin = if S.size polygonSet > 0 then (minimum is, minimum js) else low
         possibleMax = if S.size polygonSet > 0 then (maximum is, maximum js) else high
         allPossibleTiles = S.fromList [ix | ix <- A.range (possibleMin, possibleMax), not (S.member ix polygonSet)]
-        
+
         isIntersection ix =  S.member ix polygonSet && S.member (grid ! ix) (S.fromList ['|', '7', 'F'])
 
         insideLoop =

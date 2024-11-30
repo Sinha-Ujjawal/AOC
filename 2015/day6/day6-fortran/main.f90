@@ -22,7 +22,7 @@ contains
         implicit none
         character(:), allocatable, intent(inout)  :: string
         integer, intent(out)                      :: err
-        
+
         integer                                   :: idx, ascii
 
         ret = 0
@@ -136,10 +136,10 @@ contains
         implicit none
         character(:), allocatable, intent(inout) :: line
         integer, intent(out)                     :: err
-        
+
         ret % instruction_type = try_parse_instruction_type(line, err)
         if (err /= 0) return
-        
+
         ret % box = try_parse_box(line, err)
         if (err /= 0) return
 
@@ -168,7 +168,7 @@ program main
     integer                                  :: lx, ux, ly, uy
     integer                                  :: grid_part_1(1000, 1000), part_1_ans
     integer                                  :: grid_part_2(1000, 1000), part_2_ans
-    
+
     num_args = command_argument_count()
 
     if (num_args == 0) then

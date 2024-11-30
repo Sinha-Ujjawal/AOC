@@ -68,7 +68,7 @@ solvePart1ForFile :: String -> IO Int
 solvePart1ForFile filePath = do
     gamesMaybe <- parseGamesFromFile filePath
     case gamesMaybe of
-        Just games -> 
+        Just games ->
             return $ solvePart1ForInput games
         Nothing -> do
             putStrLn $ "Could not parse the file: " ++ filePath
@@ -88,7 +88,7 @@ solvePart2ForFile :: String -> IO Int
 solvePart2ForFile filePath = do
     gamesMaybe <- parseGamesFromFile filePath
     case gamesMaybe of
-        Just games -> 
+        Just games ->
             return $ solvePart2ForInput games
         Nothing -> do
             putStrLn $ "Could not parse the file: " ++ filePath
@@ -99,7 +99,7 @@ main = do
     filePath <- prompt "Enter File Path: "
     gamesMaybe <- parseGamesFromFile filePath
     case gamesMaybe of
-        Just games -> do 
+        Just games -> do
             let part1Ans = solvePart1ForInput games
                 part2Ans = solvePart2ForInput games
             putStrLn $ "Part 1: " ++ show part1Ans

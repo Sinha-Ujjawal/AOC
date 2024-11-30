@@ -165,7 +165,7 @@ void print_instruction(instruction *ins_ptr)
     case Not:
         printf("Not: NOT "SV_Fmt" -> "SV_Fmt"\n", SV_Arg(ins.in1.name), SV_Arg(ins.out.name));
         break;
-    
+
     default:
         break;
     }
@@ -229,7 +229,7 @@ uint16_t solve(instructions *instructions, String_View wire_name)
     case Not:
         ins_for_wire->cached_out = ~solve(instructions, ins_for_wire->in1.name);
         break;
-    
+
     default:
         ins_for_wire->cached_out = 0;
         break;
@@ -295,7 +295,7 @@ int main(int argc, char **argv)
     String_View wire_a = sv_from_cstr(argv[2]);
     uint16_t part_1_ans = solve(&instructions, wire_a);
     printf("Part 1: %u\n", part_1_ans);
-    
+
     String_View wire_b = sv_from_cstr(argv[3]);
     instruction override_ins = {
         .gate = Override,

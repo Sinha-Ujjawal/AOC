@@ -28,20 +28,20 @@ handType :: Hand -> HandType
 handType (_1, _2, _3, _4, _5) =
     case sortOn length . group $ sort [_1, _2, _3, _4, _5] of
         [[_, _, _, _, _]] -> FiveOfKind
-        
+
         [[x], [y, _, _, _]] ->
             if x == Jkr || y == Jkr
                 then FiveOfKind
                 else FourOfKind
-        
+
         [[x, _], [y, _, _]] ->
             if x == Jkr || y == Jkr
-                then FiveOfKind 
+                then FiveOfKind
                 else FullHouse
 
         [[x], [y], [z, _, _]] ->
             if x == Jkr || y == Jkr || z == Jkr
-                then FourOfKind 
+                then FourOfKind
                 else ThreeOfKind
 
         [[x], [y, _], [z, _]] ->
@@ -55,7 +55,7 @@ handType (_1, _2, _3, _4, _5) =
             if x == Jkr || y == Jkr || z == Jkr || w == Jkr
                 then ThreeOfKind
                 else OnePair
-        
+
         [[x], [y], [z], [w], [a]] ->
             if x == Jkr || y == Jkr || z == Jkr || w == Jkr || a == Jkr
                 then OnePair

@@ -165,14 +165,14 @@ int main(int argc, string argv[])
                 for (usize x = lowx; x <= highx; x++) {
                     for (usize y = lowy; y <= highy; y++) {
                         usize idx = x * GRID_WIDTH + y;
-                        
+
                         // Part 1
                         if (!GRID_PART_1[idx])
                         {
                             ans_part_1++;
                             GRID_PART_1[idx] = 1;
                         }
-                        
+
                         // Part 2
                         ans_part_2++;
                         GRID_PART_2[idx]++;
@@ -184,14 +184,14 @@ int main(int argc, string argv[])
                 for (usize x = lowx; x <= highx; x++) {
                     for (usize y = lowy; y <= highy; y++) {
                         usize idx = x * GRID_WIDTH + y;
-                        
+
                         // Part 1
                         if (GRID_PART_1[idx])
                         {
                             ans_part_1--;
                             GRID_PART_1[idx] = 0;
                         }
-                        
+
                         // Part 2
                         if (GRID_PART_2[idx])
                         {
@@ -206,7 +206,7 @@ int main(int argc, string argv[])
                 for (usize x = lowx; x <= highx; x++) {
                     for (usize y = lowy; y <= highy; y++) {
                         usize idx = x * GRID_WIDTH + y;
-                        
+
                         // Part 1
                         GRID_PART_1[idx] ^= 1;
                         if (GRID_PART_1[idx])
@@ -223,7 +223,7 @@ int main(int argc, string argv[])
                     }
                 }
                 break;
-            
+
             default:
                 break;
             }

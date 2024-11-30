@@ -333,6 +333,6 @@ main(!IO) :-
         true
     ;
         InstructionsOrErr = error(parse_error(Line, String)),
-        io.format("Could not parse line: %d: ""%s""\n", [i(Line), s(String)], !IO)       
+        io.format("Could not parse line: %d: ""%s""\n", [i(Line), s(String)], !IO)
     ),
     true.

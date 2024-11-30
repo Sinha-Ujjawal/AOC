@@ -207,7 +207,7 @@ usize solve_part_1(da_instruction *instructions) {
                 }
             }
             break;
-        
+
         default:
             break;
         }
@@ -260,7 +260,7 @@ usize solve_part_2(da_instruction *instructions) {
                 }
             }
             break;
-        
+
         default:
             break;
         }
