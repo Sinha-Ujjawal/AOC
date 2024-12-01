@@ -22,21 +22,31 @@
         }\
     }\
 }\
+
+#define bisect_right(target, low, high, fn_key) {\
+    while (*low < *high) {\
+        typeof(*low) mid = *low + ((*high - *low) >> 1);\
+        if (fn_key(mid) <= target) {\
+            *low = mid + 1;\
+        } else {\
+            *high = mid;\
+        }\
+    }\
+}\
 // end binary_search
 
 // start heap
-#define heapify(arr, n, fn_compare, root) {\
+#define heapify(arr, count, fn_compare, root) {\
     typeof((arr)) items = (arr);\
-    size_t count = (n);\
     size_t i = (root);\
     while(1) {\
         size_t r     = i;\
-        size_t left  = r << 1;\
+        size_t left  = (r << 1) + 1;\
         size_t right = left + 1;\
-        if (left < count  && (fn_compare(items[left] , items[r]))) {\
+        if (left < (count)  && (fn_compare(items[left] , items[r]))) {\
             r = left;\
         }\
-        if (right < count && (fn_compare(items[right], items[r]))) {\
+        if (right < (count) && (fn_compare(items[right], items[r]))) {\
             r = right;\
         }\
         if (i == r) {\
@@ -49,22 +59,20 @@
     }\
 }\
 
-#define build_heap(arr, n, fn_compare) {\
-    size_t count = (n);\
-    if (count > 0) {\
-        int i = (count >> 1) - 1;\
-        while (i >= 0) {\
-            size_t root = i;\
-            heapify(arr, n, fn_compare, root);\
-            i--;\
-        }\
+#define build_heap(arr, count, fn_compare) {\
+    if ((count) > 1) {\
+        int root = (count) >> 1;\
+        do {\
+            root--;\
+            heapify(arr, count, fn_compare, root);\
+        } while(root > 0);\
     }\
 }\
 
-#define heapsort(arr, n, fn_compare) {\
-    build_heap(arr, n, fn_compare);\
+#define heapsort(arr, count, fn_compare) {\
+    build_heap(arr, count, fn_compare);\
     typeof((arr)) items = (arr);\
-    size_t end = (n);\
+    size_t end = (count);\
     while (end > 1) {\
         end -= 1;\
         typeof(*items) temp = items[0];\
