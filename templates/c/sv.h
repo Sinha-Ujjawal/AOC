@@ -13,12 +13,13 @@
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
+#include <stdbool.h>
 
 #define SV_FMT "%.*s"
 #define SV_DATA(sv) (int)(sv).count, (sv).data
 
 typedef struct {
-    char*  data;
+    char *data;
     size_t count;
 } sv;
 
@@ -27,15 +28,15 @@ typedef struct {
   sv snd;
 } sv_pair;
 
-sv sv_from_ptr(char* data, size_t count) {
+sv sv_from_ptr(char *data, size_t count) {
     sv ret = {0};
     ret.data = data;
     ret.count = count;
     return ret;
 }
 
-sv sv_from_cstr(char* data) {
-    return sv_from_ptr(data, strlen(data));
+sv sv_from_cstr(const char *data) {
+    return sv_from_ptr((char *) data, strlen(data));
 }
 
 sv sv_take_n(sv s, size_t n) {
@@ -97,6 +98,51 @@ sv sv_substring(sv s, size_t begin, size_t count) {
         return ret;
     }
     return sv_take_n(sv_drop_n(s, begin), count);
+}
+
+bool sv_starts_with(sv self, sv other) {
+    if (other.count == 0 || self.count < other.count) {
+        return false;
+    }
+    for (size_t i = 0; i < other.count; i++) {
+        if (self.data[i] != other.data[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool sv_starts_with_cstr(sv self, const char *other) {
+    return sv_starts_with(self, sv_from_cstr(other));
+}
+
+int sv_find(sv self, sv other) {
+    size_t idx = 0;
+    while (self.count >= other.count && !sv_starts_with(self, other)) {
+        self = sv_drop_n(self, 1);
+        idx++;
+    }
+    if (self.count >= other.count) {
+        return idx;
+    }
+    return -1;
+}
+
+sv_pair sv_split_by_sv(sv self, sv other) {
+    if (other.count == 0) {
+        sv_pair ret = {0};
+        ret.snd = self;
+        return ret;
+    }
+    int idx = sv_find(self, other);
+    if (idx < 0) {
+        return sv_split_at(self, self.count);
+    }
+    return sv_split_at(self, (size_t) idx + other.count - 1);
+}
+
+sv_pair sv_split_by_cstr(sv self, const char *other) {
+    return sv_split_by_sv(self, sv_from_cstr(other));
 }
 
 #endif // SV_IMPLEMENTATION
