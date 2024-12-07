@@ -48,7 +48,7 @@ defer:
     return result;
 }
 
-void append_to_sv_arr(string input, sv_arr *s_arr) {
+void string_to_lines(string input, sv_arr *s_arr) {
     sv s = sv_from_ptr(input.data, input.count);
     while (s.count > 0) {
         sv_pair pair = sv_split_by_char(s, '\n');
@@ -202,7 +202,7 @@ int main(int argc, char **argv) {
             return_defer(1);
         }
         printf("Solving file: %s\n", file);
-        append_to_sv_arr(file_content, &s_arr);
+        string_to_lines(file_content, &s_arr);
         printf("Part 1: %zu\n", solve_part_1(s_arr));
         printf("Part 2: %zu\n", solve_part_2(s_arr));
         file_content.count = 0;
