@@ -8,15 +8,7 @@
 
 #ifndef SV_H
 #define SV_H
-
-#ifdef SV_IMPLEMENTATION
-#include <string.h>
-#include <ctype.h>
-#include <assert.h>
 #include <stdbool.h>
-
-#define SV_FMT "%.*s"
-#define SV_DATA(sv) (int)(sv).count, (sv).data
 
 typedef struct {
     char *data;
@@ -27,6 +19,28 @@ typedef struct {
   sv fst;
   sv snd;
 } sv_pair;
+
+sv sv_from_ptr(char *data, size_t count);
+sv sv_from_cstr(const char *data);
+sv sv_take_n(sv s, size_t n);
+sv sv_drop_n(sv s, size_t n);
+sv sv_trim_left(sv s);
+sv_pair sv_split_at(sv s, size_t idx);
+sv_pair sv_split_by_char(sv s, char c);
+sv sv_substring(sv s, size_t begin, size_t count);
+bool sv_starts_with(sv self, sv other);
+bool sv_starts_with_cstr(sv self, const char *other);
+int sv_find(sv self, sv other);
+sv_pair sv_split_by_sv(sv self, sv other);
+sv_pair sv_split_by_cstr(sv self, const char *other);
+
+#ifdef SV_IMPLEMENTATION
+#include <string.h>
+#include <ctype.h>
+#include <assert.h>
+
+#define SV_FMT "%.*s"
+#define SV_DATA(sv) (int)(sv).count, (sv).data
 
 sv sv_from_ptr(char *data, size_t count) {
     sv ret = {0};
@@ -66,11 +80,13 @@ sv_pair sv_split_at(sv s, size_t idx) {
     if (s.count == 0) {
         return ret;
     }
-    if (idx >= s.count) {
+    if (idx > s.count) {
         idx = s.count - 1;
+        ret.fst = sv_from_ptr(s.data, idx);
+    } else {
+        ret.fst = sv_from_ptr(s.data, idx);
+        ret.snd = sv_from_ptr(s.data + idx, s.count - idx);
     }
-    ret.fst = sv_from_ptr(s.data, idx + 1);
-    ret.snd = sv_from_ptr(s.data + idx + 1, s.count - idx - 1);
     return ret;
 }
 
@@ -101,7 +117,7 @@ sv sv_substring(sv s, size_t begin, size_t count) {
 }
 
 bool sv_starts_with(sv self, sv other) {
-    if (other.count == 0 || self.count < other.count) {
+    if (self.count < other.count) {
         return false;
     }
     for (size_t i = 0; i < other.count; i++) {
@@ -118,7 +134,7 @@ bool sv_starts_with_cstr(sv self, const char *other) {
 
 int sv_find(sv self, sv other) {
     size_t idx = 0;
-    while (self.count >= other.count && !sv_starts_with(self, other)) {
+    while (other.count > 0 && self.count >= other.count && !sv_starts_with(self, other)) {
         self = sv_drop_n(self, 1);
         idx++;
     }
