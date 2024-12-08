@@ -129,16 +129,19 @@ int sv_find(sv self, sv other) {
 }
 
 sv_pair sv_split_by_sv(sv self, sv other) {
+    sv_pair ret = {0};
     if (other.count == 0) {
-        sv_pair ret = {0};
         ret.snd = self;
         return ret;
     }
     int idx = sv_find(self, other);
     if (idx < 0) {
-        return sv_split_at(self, self.count);
+        ret.fst = self;
+        return ret;
     }
-    return sv_split_at(self, (size_t) idx + other.count - 1);
+    ret.fst = sv_take_n(self, idx + 1);
+    ret.snd = sv_substring(self, idx + other.count, self.count);
+    return ret;
 }
 
 sv_pair sv_split_by_cstr(sv self, const char *other) {
