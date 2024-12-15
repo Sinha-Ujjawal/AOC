@@ -33,11 +33,15 @@ bool sv_starts_with_cstr(sv self, const char *other);
 int sv_find(sv self, sv other);
 sv_pair sv_split_by_sv(sv self, sv other);
 sv_pair sv_split_by_cstr(sv self, const char *other);
+bool sv_parse_long(sv self, long *result, char **old_ptr);
+bool sv_parse_longlong(sv self, long long *result, char **old_ptr);
 
 #ifdef SV_IMPLEMENTATION
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <assert.h>
+#include <sys/errno.h>
 
 #define SV_FMT "%.*s"
 #define SV_DATA(sv) (int)(sv).count, (sv).data
@@ -162,6 +166,28 @@ sv_pair sv_split_by_sv(sv self, sv other) {
 
 sv_pair sv_split_by_cstr(sv self, const char *other) {
     return sv_split_by_sv(self, sv_from_cstr(other));
+}
+
+bool sv_parse_long(sv self, long *result, char **endptr) {
+    assert(result != NULL);
+    errno = 0;
+    *result = strtol(self.data, endptr, 10);
+    if (errno != 0) {
+        printf("ERROR: could not parse long from the input: `"SV_FMT"` :%s\n", SV_DATA(self), strerror(errno));
+        return false;
+    }
+    return true;
+}
+
+bool sv_parse_longlong(sv self, long long *result, char **endptr) {
+    assert(result != NULL);
+    errno = 0;
+    *result = strtoll(self.data, endptr, 10);
+    if (errno != 0) {
+        printf("ERROR: could not parse long from the input: `"SV_FMT"` :%s\n", SV_DATA(self), strerror(errno));
+        return false;
+    }
+    return true;
 }
 
 #endif // SV_IMPLEMENTATION
