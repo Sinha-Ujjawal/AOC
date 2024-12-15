@@ -18,10 +18,21 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#ifndef DA_INIT_CAP
 #define DA_INIT_CAP          64
+#endif //DA_INIT_CAP
+
+#ifndef DA_GROWTH_FACTOR
 #define DA_GROWTH_FACTOR     2
+#endif //DA_GROWTH_FACTOR
+
+#ifndef DA_SHRINK_FACTOR
 #define DA_SHRINK_FACTOR     0.5
+#endif //DA_SHRINK_FACTOR
+
+#ifndef DA_SHRINK_THRESHOLD
 #define DA_SHRINK_THRESHOLD  0.33
+#endif //DA_SHRINK_THRESHOLD
 
 /* `da` is a structure matching below signature-
     `t` is a type parameter
@@ -33,21 +44,24 @@
     };
 */
 
+#ifndef DA_REALLOC
+#define DA_REALLOC(old_ptr, old_bytes, new_bytes) realloc((old_ptr), (new_bytes))
+#endif //DA_REALLOC
+
 #define da_type(name, t) typedef struct {\
     size_t count;\
     size_t capacity;\
     t*     data;\
 } name;\
 
-#define da_init(da) {\
-    (da)->capacity = DA_INIT_CAP;\
-    (da)->count    = 0;\
-    (da)->data     = malloc(sizeof(*(da)->data) * (da)->capacity);\
+#define _da_resize(da, new_capacity) {\
+    (da)->data     = DA_REALLOC((da)->data, sizeof(*(da)->data) * (da)->capacity, sizeof(*(da)->data) * new_capacity);\
+    (da)->capacity = (new_capacity);\
 }\
 
-#define _da_resize(da, new_capacity) {\
-    (da)->capacity = (new_capacity);\
-    (da)->data     = realloc((da)->data, sizeof(*(da)->data) * new_capacity);\
+#define da_init(da) {\
+    _da_resize(da, DA_INIT_CAP);\
+    (da)->count = 0;\
 }\
 
 #define _da_grow(da) {\
