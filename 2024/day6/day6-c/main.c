@@ -329,17 +329,17 @@ defer:
     if (g.rows.data) {
         free(g.rows.data);
     }
-    if (bg.north_bm.data) {
-        free(bg.north_bm.data);
+    if (bg.north_bm.buckets) {
+        free(bg.north_bm.buckets);
     }
-    if (bg.south_bm.data) {
-        free(bg.south_bm.data);
+    if (bg.south_bm.buckets) {
+        free(bg.south_bm.buckets);
     }
-    if (bg.east_bm.data) {
-        free(bg.east_bm.data);
+    if (bg.east_bm.buckets) {
+        free(bg.east_bm.buckets);
     }
-    if (bg.west_bm.data) {
-        free(bg.west_bm.data);
+    if (bg.west_bm.buckets) {
+        free(bg.west_bm.buckets);
     }
     return result;
 }

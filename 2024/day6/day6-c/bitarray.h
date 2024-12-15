@@ -28,29 +28,31 @@ void bitarray_print(bitarray bits);
 #define BITARRAY_MEMSET  memset
 
 struct bitarray {
-    char   *data;
+    char   *buckets;
+    size_t num_buckets;
     size_t count;
     size_t capacity;
 };
 
 void bitarray_reset(bitarray *bits, size_t capacity) {
-    bits->data = BITARRAY_REALLOC(bits->data, ceil(capacity / 8.0));
-    BITARRAY_MEMSET(bits->data, 0, ceil(capacity / 8.0));
+    bits->num_buckets = ceil(capacity / 8.0);
+    bits->buckets = BITARRAY_REALLOC(bits->buckets, bits->num_buckets);
+    BITARRAY_MEMSET(bits->buckets, 0, bits->num_buckets);
     bits->count = 0;
     bits->capacity = capacity;
 }
 
 bool bitarray_set(bitarray *bits, size_t posn) {
     size_t bucket_posn = posn / 8;
-    if (bucket_posn >= bits->capacity) {
+    if (bucket_posn >= bits->num_buckets) {
         return false; // out of bounds
     }
     size_t posn_in_bucket = posn % 8;
-    if (bits->data[bucket_posn] & (1 << posn_in_bucket)) {
+    if (bits->buckets[bucket_posn] & (1 << posn_in_bucket)) {
         return false; // already set
     }
     bits->count += 1;
-    bits->data[bucket_posn] |= 1 << posn_in_bucket;
+    bits->buckets[bucket_posn] |= 1 << posn_in_bucket;
     return true;
 }
 
@@ -60,12 +62,12 @@ bool bitarray_unset(bitarray *bits, size_t posn) {
         return false; // out of bounds
     }
     size_t posn_in_bucket = posn % 8;
-    if (!(bits->data[bucket_posn] & (1 << posn_in_bucket))) {
+    if (!(bits->buckets[bucket_posn] & (1 << posn_in_bucket))) {
         return false; // already unset
     }
     assert(bits->count > 0);
     bits->count -= 1;
-    bits->data[bucket_posn] ^= 1 << posn_in_bucket;
+    bits->buckets[bucket_posn] ^= 1 << posn_in_bucket;
     return true;
 }
 
@@ -75,7 +77,7 @@ bool bitarray_isset(bitarray bits, size_t posn) {
         return false; // out of bounds
     }
     size_t posn_in_bucket = posn % 8;
-    return bits.data[bucket_posn] & (1 << posn_in_bucket);
+    return bits.buckets[bucket_posn] & (1 << posn_in_bucket);
 }
 
 void bitarray_print(bitarray bits) {
@@ -84,7 +86,7 @@ void bitarray_print(bitarray bits) {
         if (i > 0) {
             printf(" ");
         }
-        printf("%x", bits.data[i]);
+        printf("%x", bits.buckets[i]);
     }
     printf(">\n");
 }
