@@ -1,15 +1,25 @@
 // Copyright 2024 <Sinha-Ujjawal>
 //
-// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"),
-// to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
-// and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+// Permission is hereby granted, free of charge, to any person
+// obtaining a copy of this software and associated documentation
+// files (the "Software"), to deal in the Software without
+// restriction, including without limitation the rights to use,
+// copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the
+// Software is furnished to do so, subject to the following
+// conditions:
 //
-// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+// The above copyright notice and this permission notice shall be
+// included in all copies or substantial portions of the Software.
 //
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+// OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+// HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+// WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+// OTHER DEALINGS IN THE SOFTWARE.
 
 #ifndef DA_H
 #define DA_H
@@ -53,6 +63,39 @@
     size_t capacity;\
     t*     data;\
 } name;\
+void da_init_##name(name *da) {\
+    da_init(da);\
+}\
+void da_push_##name(name *da, t item) {\
+    da_push(da, item);\
+}\
+void da_ensure_capacity_##name(name *da, size_t min_capacity) {\
+    da_ensure_capacity(da, min_capacity);\
+}\
+void da_grow_##name(name *da) {\
+    da_grow(da);\
+}\
+void da_pop_##name(name *da, t *result) {\
+    da_pop(da, result);\
+}\
+void da_shrink_##name(name *da) {\
+    da_shrink(da);\
+}\
+void da_get_at_##name(name da, size_t idx, t *result) {\
+    da_get_at(da, idx, result);\
+}\
+void da_put_at_##name(name *da, size_t idx, t item) {\
+    da_put_at(da, idx, item);\
+}\
+void da_insert_at_##name(name *da, size_t idx, t item) {\
+    da_insert_at(da, idx, item);\
+}\
+void da_delete_at_##name(name *da, size_t idx) {\
+    da_delete_at(da, idx);\
+}\
+void da_pop_at_##name(name *da, size_t idx, t *result) {\
+    da_pop_at(da, idx, result);\
+}\
 
 #define _da_resize(da, new_capacity) {\
     (da)->data     = DA_REALLOC((da)->data, sizeof(*(da)->data) * (da)->capacity, sizeof(*(da)->data) * new_capacity);\
@@ -125,8 +168,8 @@
 }\
 
 #define da_put_at(da, idx, item) {\
-    assert((((idx) >= 0) && ((idx) < (da).count)) && "Index out of bounds!");\
-    (da).data[(idx)] = (item);\
+    assert((((idx) >= 0) && ((idx) < (da)->count)) && "Index out of bounds!");\
+    (da)->data[(idx)] = (item);\
 }\
 
 #define _da_move(da, start, end, off) {\
