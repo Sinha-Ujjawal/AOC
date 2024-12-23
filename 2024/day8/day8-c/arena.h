@@ -46,6 +46,7 @@ void arena_debug(arena *arena);
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
 
 #ifndef ARENA_MALLOC
 #define ARENA_MALLOC malloc
@@ -59,7 +60,7 @@ void arena_debug(arena *arena);
 #define ARENA_FREE free
 #endif // ARENA_FREE
 
-typedef void *arena_bytes;
+typedef void* arena_bytes;
 
 typedef struct arena_region arena_region;
 struct arena_region {
@@ -92,6 +93,7 @@ arena_region *arena_new_region(size_t capacity) {
   arena_region *r = arena->begin; \
   while (r != NULL) { \
     r->count = 0; \
+    memset(r->bytes, 0, r->capacity); \
     r = r->next; \
   } \
   arena->end = arena->begin; \

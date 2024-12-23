@@ -11,11 +11,15 @@ const arena default_arena = {0};
 arena context_arena = default_arena;
 
 void *context_arena_alloc(size_t bytes) {
-    return arena_alloc(&context_arena, bytes);
+    void *ptr = arena_alloc(&context_arena, bytes);
+    printf("Allocating %zu bytes, returning pointer: %p\n", bytes, ptr);
+    return ptr;
 }
 
 void *context_arena_realloc(void *old_ptr, size_t old_bytes, size_t new_bytes) {
-    return arena_realloc(&context_arena, old_ptr, old_bytes, new_bytes);
+    void *ptr = arena_realloc(&context_arena, old_ptr, old_bytes, new_bytes);
+    printf("Reallocating old pointer: %p of %zu bytes, to new pointer: %p of %zu bytes\n", old_ptr, old_bytes, ptr, new_bytes);
+    return ptr;
 }
 
 #define DA_IMPLEMENTATION
@@ -184,10 +188,6 @@ void mark_anti_towers(grid g, bitarray *ba, spawn_mode mode) {
 
 int main(int argc, char **argv) {
     int result = 0;
-    string file_content = {0}; da_init(&file_content);
-    grid g = {0};
-    ht_init_tower_dict(&g.towers);
-    bitarray ba = {0};
     char *program = *argv++; argc--;
     if (argc == 0) {
         printf("ERROR: no parameters provided!\n");
@@ -196,22 +196,23 @@ int main(int argc, char **argv) {
     }
     while (argc > 0) {
         char *file = *argv++; argc--;
+        string file_content = {0}; da_init(&file_content);
         if (read_entire_file(file, &file_content) != 0) {
             return_defer(1);
         }
-        ht_reset_tower_dict(&g.towers);
-        g.width = 0;
-        g.height = 0;
+        grid g = {0};
+        ht_init_tower_dict(&g.towers);
         printf("Solving file: %s\n", file);
         if (!parse_grid_from_input(file_content, &g)) {
             return_defer(1);
         }
+        bitarray ba = {0};
         bitarray_reset(&ba, g.width*g.height);
         mark_anti_towers(g, &ba, spawn_once);
         printf("Part 1: %zu\n", ba.count);
         mark_anti_towers(g, &ba, spawn_multiple);
         printf("Part 2: %zu\n", ba.count);
-        file_content.count = 0;
+        arena_reset(&context_arena);
     }
 
 defer:
